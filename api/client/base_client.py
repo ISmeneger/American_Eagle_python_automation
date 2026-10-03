@@ -1,3 +1,5 @@
+import requests
+
 from api.auth.token_manager import TokenManager
 from api.config.settings import COMMON_HEADERS
 
@@ -12,6 +14,15 @@ class BaseClient:
 
     def __init__(self):
         self.token_manager = TokenManager()
+        self.session = requests.Session()
+
+        self.session.headers.update(
+            {
+                **COMMON_HEADERS,
+                "User-Agent": self.USER_AGENT,
+                "Accept-Language": "en-US,en;q=0.9",
+            }
+        )
 
     def get_headers(
         self,
@@ -20,11 +31,8 @@ class BaseClient:
     ) -> dict[str, str]:
 
         headers = {
-            **COMMON_HEADERS,
             "Authorization":
                 self.token_manager.get_guest_authorization_header(),
-            "User-Agent": self.USER_AGENT,
-            "Accept-Language": "en-US,en;q=0.9",
         }
 
         if content_type:

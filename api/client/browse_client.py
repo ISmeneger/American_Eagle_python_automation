@@ -26,7 +26,7 @@ class BrowseClient(BaseClient):
             category_id=category_id
         )
 
-        return requests.get(
+        return self.session.get(
             url=f"{BASE_URL}{endpoint}",
             headers=headers,
             timeout=20,

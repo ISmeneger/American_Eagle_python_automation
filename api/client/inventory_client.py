@@ -18,7 +18,7 @@ class InventoryClient(BaseClient):
             product_id=product_id
         )
 
-        return requests.get(
+        return self.session.get(
             url=f"{BASE_URL}{endpoint}",
             headers=self.get_headers(),
             timeout=20,

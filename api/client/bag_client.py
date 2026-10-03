@@ -11,7 +11,7 @@ from api.config.settings import (
 class BagClient(BaseClient):
 
     def get_bag_response(self) -> requests.Response:
-        return requests.get(
+        return self.session.get(
             url=f"{BASE_URL}{BAG_ENDPOINT}",
             headers=self.get_headers(),
             timeout=20,
@@ -32,7 +32,7 @@ class BagClient(BaseClient):
             ]
         }
 
-        return requests.post(
+        return self.session.post(
             url=f"{BASE_URL}{BAG_ITEMS_ENDPOINT}",
             headers=self.get_headers(
                 content_type="application/json"
@@ -58,7 +58,7 @@ class BagClient(BaseClient):
             ]
         }
 
-        return requests.patch(
+        return self.session.patch(
             url=f"{BASE_URL}{BAG_ITEMS_ENDPOINT}",
             headers=self.get_headers(
                 content_type="application/json"
@@ -72,7 +72,7 @@ class BagClient(BaseClient):
         item_id: str,
     ) -> requests.Response:
 
-        return requests.delete(
+        return self.session.delete(
             url=f"{BASE_URL}{BAG_ITEMS_ENDPOINT}",
             headers=self.get_headers(),
             params={
