@@ -1,18 +1,22 @@
 from api.client.browse_client import BrowseClient
 from api.client.inventory_client import InventoryClient
 from api.config.settings import TEST_CATEGORY_ID
-from utils.test_data_helper import get_random_available_product_and_sku
+from utils.test_data_helper import get_available_product_skus
 
 
 def test_get_available_product_and_sku():
     browse_client = BrowseClient()
     inventory_client = InventoryClient()
 
-    product_id, sku_id = get_random_available_product_and_sku(
+    candidates = get_available_product_skus(
         browse_client,
         inventory_client,
         TEST_CATEGORY_ID,
     )
+
+    assert candidates
+
+    product_id, sku_id = candidates[0]
 
     print("\nProduct ID:", product_id)
     print("SKU ID:", sku_id)
