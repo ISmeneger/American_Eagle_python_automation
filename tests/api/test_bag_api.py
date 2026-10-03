@@ -6,6 +6,7 @@ def test_bag_item_lifecycle(
     browse_client,
     inventory_client,
     bag_client,
+    clean_bag,
 ):
     bag_response = bag_client.get_bag_response()
 
