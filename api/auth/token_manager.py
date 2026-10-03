@@ -1,10 +1,12 @@
+import requests
+
 from api.client.token_client import TokenClient
 
 
 class TokenManager:
 
-    def __init__(self):
-        self.token_client = TokenClient()
+    def __init__(self, session: requests.Session | None = None):
+        self.token_client = TokenClient(session)
         self._guest_token = None
 
     def get_guest_token(self) -> str:

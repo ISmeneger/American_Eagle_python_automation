@@ -10,6 +10,9 @@ from api.config.settings import (
 
 class TokenClient:
 
+    def __init__(self, session: requests.Session | None = None):
+        self.session = session or requests.Session()
+
     def get_guest_token_response(self) -> requests.Response:
         headers = {
             **COMMON_HEADERS,
@@ -27,7 +30,7 @@ class TokenClient:
             "grant_type": "client_credentials",
         }
 
-        return requests.post(
+        return self.session.post(
             url=f"{BASE_URL}{GUEST_TOKEN_ENDPOINT}",
             headers=headers,
             data=data,
@@ -39,8 +42,7 @@ class TokenClient:
 
         response.raise_for_status()
 
-        response_body = response.json()
-        token = response_body.get("access_token")
+        token = response.json().get("access_token")
 
         if not token:
             raise RuntimeError(

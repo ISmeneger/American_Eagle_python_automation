@@ -1,15 +1,12 @@
-from api.client.bag_client import BagClient
-from api.client.browse_client import BrowseClient
-from api.client.inventory_client import InventoryClient
 from api.config.settings import TEST_CATEGORY_ID
 from utils.test_data_helper import get_available_product_skus
 
 
-def test_bag_item_lifecycle():
-    browse_client = BrowseClient()
-    inventory_client = InventoryClient()
-    bag_client = BagClient()
-
+def test_bag_item_lifecycle(
+    browse_client,
+    inventory_client,
+    bag_client,
+):
     bag_response = bag_client.get_bag_response()
 
     assert bag_response.status_code == 200

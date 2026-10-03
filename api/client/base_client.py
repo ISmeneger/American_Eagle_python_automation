@@ -12,9 +12,8 @@ class BaseClient:
         "Chrome/154.0.0.0 Safari/537.36"
     )
 
-    def __init__(self):
-        self.token_manager = TokenManager()
-        self.session = requests.Session()
+    def __init__(self, session: requests.Session | None = None):
+        self.session = session or requests.Session()
 
         self.session.headers.update(
             {
@@ -23,6 +22,8 @@ class BaseClient:
                 "Accept-Language": "en-US,en;q=0.9",
             }
         )
+
+        self.token_manager = TokenManager(self.session)
 
     def get_headers(
         self,
