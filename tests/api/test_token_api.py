@@ -1,6 +1,10 @@
+import allure
+
 from api.client.token_client import TokenClient
 
-
+@allure.feature("Authentication API")
+@allure.story("Guest token")
+@allure.title("Receive guest access token")
 def test_guest_token_received():
     token_client = TokenClient()
 

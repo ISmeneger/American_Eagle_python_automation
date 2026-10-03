@@ -1,7 +1,11 @@
+import allure
+
 from api.client.browse_client import BrowseClient
 from api.config.settings import TEST_CATEGORY_ID
 
-
+@allure.feature("Browse API")
+@allure.story("Category products")
+@allure.title("Get products from category")
 def test_get_products_from_category():
     browse_client = BrowseClient()
 

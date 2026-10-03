@@ -1,7 +1,12 @@
+import allure
+
 from api.config.settings import TEST_CATEGORY_ID
 from utils.test_data_helper import get_available_product_skus
 
 
+@allure.feature("Inventory API")
+@allure.story("Product availability")
+@allure.title("Get available SKU for product")
 def test_get_available_product_and_sku(
     browse_client,
     inventory_client,
