@@ -1,0 +1,28 @@
+# PyCharm / IntelliJ
+.idea/
+
+# Virtual environments
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Pytest
+.pytest_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Allure
+allure-results/
+allure-report/
+
+# Environment variables
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
