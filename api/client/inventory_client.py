@@ -10,17 +10,23 @@ from api.config.settings import (
 class InventoryClient(BaseClient):
 
     def get_inventory_response(
-        self,
-        product_id: str,
+            self,
+            product_id: str,
+            include_authorization: bool = True,
     ) -> requests.Response:
-
         endpoint = INVENTORY_ENDPOINT.format(
             product_id=product_id
         )
 
+        headers = (
+            self.get_headers()
+            if include_authorization
+            else {}
+        )
+
         return self.session.get(
             url=f"{BASE_URL}{endpoint}",
-            headers=self.get_headers(),
+            headers=headers,
             timeout=20,
         )
 

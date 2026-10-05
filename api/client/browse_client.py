@@ -12,13 +12,19 @@ from api.config.settings import (
 class BrowseClient(BaseClient):
 
     def get_category_response(
-        self,
-        category_id: str,
+            self,
+            category_id: str,
+            include_authorization: bool = True,
     ) -> requests.Response:
 
-        headers = self.get_headers(
-            accept="application/vnd.api+json"
-        )
+        if include_authorization:
+            headers = self.get_headers(
+                accept="application/vnd.api+json"
+            )
+        else:
+            headers = {
+                "Accept": "application/vnd.api+json",
+            }
 
         headers["channelType"] = "WEB"
 

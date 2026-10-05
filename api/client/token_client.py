@@ -13,11 +13,13 @@ class TokenClient:
     def __init__(self, session: requests.Session | None = None):
         self.session = session or requests.Session()
 
-    def get_guest_token_response(self) -> requests.Response:
+    def request_guest_token(
+        self,
+        authorization: str | None,
+    ) -> requests.Response:
         headers = {
             **COMMON_HEADERS,
             "Content-Type": "application/x-www-form-urlencoded",
-            "Authorization": get_guest_auth(),
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -25,6 +27,9 @@ class TokenClient:
             ),
             "Accept-Language": "en-US,en;q=0.9",
         }
+
+        if authorization is not None:
+            headers["Authorization"] = authorization
 
         data = {
             "grant_type": "client_credentials",
@@ -35,6 +40,11 @@ class TokenClient:
             headers=headers,
             data=data,
             timeout=20,
+        )
+
+    def get_guest_token_response(self) -> requests.Response:
+        return self.request_guest_token(
+            authorization=get_guest_auth()
         )
 
     def get_guest_token(self) -> str:

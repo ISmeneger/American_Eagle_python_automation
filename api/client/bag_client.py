@@ -18,11 +18,11 @@ class BagClient(BaseClient):
         )
 
     def add_item(
-        self,
-        sku_id: str,
-        quantity: int = 1,
+            self,
+            sku_id: str,
+            quantity: int = 1,
+            include_authorization: bool = True,
     ) -> requests.Response:
-
         payload = {
             "items": [
                 {
@@ -31,6 +31,23 @@ class BagClient(BaseClient):
                 }
             ]
         }
+
+        headers = (
+            self.get_headers(
+                content_type="application/json"
+            )
+            if include_authorization
+            else {
+                "Content-Type": "application/json"
+            }
+        )
+
+        return self.session.post(
+            url=f"{BASE_URL}{BAG_ITEMS_ENDPOINT}",
+            headers=headers,
+            json=payload,
+            timeout=20,
+        )
 
         return self.session.post(
             url=f"{BASE_URL}{BAG_ITEMS_ENDPOINT}",
@@ -68,13 +85,19 @@ class BagClient(BaseClient):
         )
 
     def delete_item(
-        self,
-        item_id: str,
+            self,
+            item_id: str,
+            include_authorization: bool = True,
     ) -> requests.Response:
+        headers = (
+            self.get_headers()
+            if include_authorization
+            else {}
+        )
 
         return self.session.delete(
             url=f"{BASE_URL}{BAG_ITEMS_ENDPOINT}",
-            headers=self.get_headers(),
+            headers=headers,
             params={
                 "itemIds": item_id,
             },

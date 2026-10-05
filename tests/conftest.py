@@ -1,3 +1,4 @@
+from api.client.token_client import TokenClient
 from pathlib import Path
 
 import pytest
@@ -77,3 +78,7 @@ def pytest_sessionfinish(session, exitstatus):
         ),
         encoding="utf-8",
     )
+
+@pytest.fixture
+def token_client(api_session):
+    return TokenClient(api_session)

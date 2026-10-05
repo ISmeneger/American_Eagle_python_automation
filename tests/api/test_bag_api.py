@@ -119,3 +119,248 @@ def test_bag_item_lifecycle(
 
         assert final_bag["data"]["itemCount"] == 0
         assert final_bag["data"]["items"] == []
+
+@allure.feature("Bag API")
+@allure.story("Multiple bag items")
+@allure.title("Add multiple different items to guest bag")
+def test_add_multiple_different_items_to_bag(
+    browse_client,
+    inventory_client,
+    bag_client,
+    clean_bag,
+):
+    with allure.step("Get available product candidates"):
+        candidates = get_available_product_skus(
+            browse_client,
+            inventory_client,
+            TEST_CATEGORY_ID,
+        )
+
+    added_skus = set()
+
+    with allure.step("Add two different available SKUs to bag"):
+        for product_id, sku_id in candidates:
+            if sku_id in added_skus:
+                continue
+
+            response = bag_client.add_item(
+                sku_id=sku_id,
+                quantity=1,
+            )
+
+            if response.status_code == 422:
+                response_body = response.json()
+                errors = response_body.get("errors", [])
+
+                if (
+                    errors
+                    and errors[0].get("key")
+                    == "error.cart.item.skuItem.out_of_stock"
+                ):
+                    continue
+
+            assert response.status_code == 202
+
+            added_skus.add(sku_id)
+
+            if len(added_skus) == 2:
+                break
+
+    assert len(added_skus) == 2, (
+        "Could not add two different available SKUs to bag"
+    )
+
+    with allure.step("Get bag after adding two items"):
+        response = bag_client.get_bag_response()
+
+        assert response.status_code == 200
+
+        bag = response.json()
+
+    with allure.step("Verify two different items are present in bag"):
+        items = bag["data"]["items"]
+
+        bag_skus = {
+            item["sku"]
+            for item in items
+        }
+
+        assert len(items) == 2
+        assert added_skus == bag_skus
+
+        for item in items:
+            assert item["quantity"] == 1
+            assert item["itemId"]
+            assert item["productId"]
+            assert item["productName"]
+            assert item["sku"]
+
+@allure.feature("Bag API")
+@allure.story("Bag negative scenarios")
+@allure.title("Add item to bag without Bearer token")
+def test_add_item_without_authorization(
+    browse_client,
+    inventory_client,
+    bag_client,
+    clean_bag,
+):
+    candidates = get_available_product_skus(
+        browse_client,
+        inventory_client,
+        TEST_CATEGORY_ID,
+    )
+
+    product_id, sku_id = candidates[0]
+
+    with allure.step("Add valid SKU without Authorization"):
+        response = bag_client.add_item(
+            sku_id=sku_id,
+            quantity=1,
+            include_authorization=False,
+        )
+
+    with allure.step("Verify 401 response without Bearer token"):
+        assert response.status_code == 401
+
+        response_body = response.json()
+
+        assert response_body["error"]["status"] == "401"
+
+        error = response_body["error"]["errors"][0]
+
+        assert error["key"] == "apicg.token.invalid"
+
+@allure.feature("Bag API")
+@allure.story("Bag negative scenarios")
+@allure.title("Add invalid SKU to bag")
+def test_add_invalid_sku(
+    bag_client,
+    clean_bag,
+):
+    invalid_sku_id = "9999999999"
+
+    with allure.step("Add invalid SKU"):
+        response = bag_client.add_item(
+            sku_id=invalid_sku_id,
+            quantity=1,
+        )
+
+    with allure.step("Verify 422 response for invalid SKU"):
+        assert response.status_code == 422
+
+        response_body = response.json()
+
+        error = response_body["errors"][0]
+
+        assert error["key"] == "error.cart.general"
+        assert error["message"] == "SKU is Invalid"
+        assert "skuId" in error["fields"]
+        assert invalid_sku_id in error["args"][0]
+
+@allure.feature("Bag API")
+@allure.story("Bag negative scenarios")
+@allure.title("Delete nonexistent item from bag")
+def test_delete_nonexistent_item(
+    bag_client,
+    clean_bag,
+):
+    invalid_item_id = "00000000-0000-0000-0000-000000000000"
+
+    with allure.step("Delete nonexistent item"):
+        response = bag_client.delete_item(
+            item_id=invalid_item_id,
+        )
+
+    with allure.step("Verify 404 response for nonexistent item"):
+        assert response.status_code == 404
+
+        response_body = response.json()
+
+        assert response_body["status"] == 404
+        assert response_body["errorName"] == "CartNotFoundException"
+
+        error = response_body["errors"][0]
+
+        assert error["status"] == "404"
+        assert error["key"] == "error.cart.notFound"
+        assert error["message"] == "Cart Not Found"
+        assert "cartId" in error["fields"]
+
+@allure.feature("Bag API")
+@allure.story("Bag negative scenarios")
+@allure.title("Update item quantity to zero")
+def test_update_item_with_zero_quantity(
+    browse_client,
+    inventory_client,
+    bag_client,
+    clean_bag,
+):
+    candidates = get_available_product_skus(
+        browse_client,
+        inventory_client,
+        TEST_CATEGORY_ID,
+    )
+
+    added_item = None
+
+    with allure.step("Add available item to bag"):
+        for product_id, sku_id in candidates:
+            response = bag_client.add_item(
+                sku_id=sku_id,
+                quantity=1,
+            )
+
+            if response.status_code == 422:
+                response_body = response.json()
+                errors = response_body.get("errors", [])
+
+                if (
+                    errors
+                    and errors[0].get("key")
+                    == "error.cart.item.skuItem.out_of_stock"
+                ):
+                    continue
+
+            assert response.status_code == 202
+
+            bag_response = bag_client.get_bag_response()
+
+            assert bag_response.status_code == 200
+
+            items = bag_response.json()["data"]["items"]
+
+            added_item = next(
+                item
+                for item in items
+                if item["sku"] == sku_id
+            )
+
+            break
+
+    assert added_item is not None
+
+    with allure.step("Update item quantity to zero"):
+        response = bag_client.update_item(
+            sku_id=added_item["sku"],
+            quantity=0,
+            item_id=added_item["itemId"],
+        )
+
+    with allure.step("Verify 400 response for zero quantity"):
+        assert response.status_code == 400
+
+        response_body = response.json()
+
+        assert response_body["status"] == 400
+        assert (
+                response_body["errorName"]
+                == "HandlerMethodValidationException"
+        )
+
+        error = response_body["errors"][0]
+
+        assert error["status"] == "400"
+        assert error["key"] == "error.cart.general"
+        assert error["message"] == "error.cart.item_qty_invalid"
+        assert "items[0].quantity" in error["fields"]
+        assert 0 in error["args"]
