@@ -1,9 +1,18 @@
 import allure
+import pytest
 
 from api.config.settings import TEST_CATEGORY_ID
 from utils.test_data_helper import get_available_product_skus
 
 
+pytestmark = [
+    pytest.mark.api,
+    pytest.mark.inventory,
+]
+
+
+@pytest.mark.smoke
+@pytest.mark.positive
 @allure.feature("Inventory API")
 @allure.story("Product availability")
 @allure.title("Get available SKU for product")
@@ -27,6 +36,8 @@ def test_get_available_product_and_sku(
     assert product_id
     assert sku_id
 
+
+@pytest.mark.negative
 @allure.feature("Inventory API")
 @allure.story("Inventory negative scenarios")
 @allure.title("Request inventory for invalid product")
@@ -46,6 +57,8 @@ def test_get_inventory_for_invalid_product(inventory_client):
         assert response_body["data"] == {}
         assert response_body["error"] is None
 
+
+@pytest.mark.negative
 @allure.feature("Inventory API")
 @allure.story("Inventory negative scenarios")
 @allure.title("Request inventory without Bearer token")

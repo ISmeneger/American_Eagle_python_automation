@@ -1,6 +1,15 @@
 import allure
+import pytest
 
 
+pytestmark = [
+    pytest.mark.api,
+    pytest.mark.auth,
+]
+
+
+@pytest.mark.smoke
+@pytest.mark.positive
 @allure.feature("Authentication API")
 @allure.story("Guest token")
 @allure.title("Receive guest access token")
@@ -19,6 +28,7 @@ def test_guest_token_received(token_client):
         assert response_body["expires_in"] > 0
 
 
+@pytest.mark.negative
 @allure.feature("Authentication API")
 @allure.story("Guest token negative scenarios")
 @allure.title("Request guest token without Authorization header")
@@ -29,9 +39,10 @@ def test_guest_token_without_authorization(token_client):
         )
 
     with allure.step("Verify request is rejected"):
-        assert response.status_code != 200
+        assert response.status_code == 401
 
 
+@pytest.mark.negative
 @allure.feature("Authentication API")
 @allure.story("Guest token negative scenarios")
 @allure.title("Request guest token with invalid Authorization")
@@ -42,4 +53,4 @@ def test_guest_token_with_invalid_authorization(token_client):
         )
 
     with allure.step("Verify request is rejected"):
-        assert response.status_code != 200
+        assert response.status_code == 401

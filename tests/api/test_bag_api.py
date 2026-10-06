@@ -1,8 +1,18 @@
 import allure
+import pytest
 
 from api.config.settings import TEST_CATEGORY_ID
 from utils.test_data_helper import get_available_product_skus
 
+
+pytestmark = [
+    pytest.mark.api,
+    pytest.mark.bag,
+]
+
+
+@pytest.mark.smoke
+@pytest.mark.positive
 @allure.feature("Bag API")
 @allure.story("Bag item lifecycle")
 @allure.title("Add, update and delete item in guest bag")
@@ -120,6 +130,8 @@ def test_bag_item_lifecycle(
         assert final_bag["data"]["itemCount"] == 0
         assert final_bag["data"]["items"] == []
 
+
+@pytest.mark.positive
 @allure.feature("Bag API")
 @allure.story("Multiple bag items")
 @allure.title("Add multiple different items to guest bag")
@@ -195,6 +207,8 @@ def test_add_multiple_different_items_to_bag(
             assert item["productName"]
             assert item["sku"]
 
+
+@pytest.mark.negative
 @allure.feature("Bag API")
 @allure.story("Bag negative scenarios")
 @allure.title("Add item to bag without Bearer token")
@@ -230,6 +244,8 @@ def test_add_item_without_authorization(
 
         assert error["key"] == "apicg.token.invalid"
 
+
+@pytest.mark.negative
 @allure.feature("Bag API")
 @allure.story("Bag negative scenarios")
 @allure.title("Add invalid SKU to bag")
@@ -257,6 +273,8 @@ def test_add_invalid_sku(
         assert "skuId" in error["fields"]
         assert invalid_sku_id in error["args"][0]
 
+
+@pytest.mark.negative
 @allure.feature("Bag API")
 @allure.story("Bag negative scenarios")
 @allure.title("Delete nonexistent item from bag")
@@ -286,6 +304,8 @@ def test_delete_nonexistent_item(
         assert error["message"] == "Cart Not Found"
         assert "cartId" in error["fields"]
 
+
+@pytest.mark.negative
 @allure.feature("Bag API")
 @allure.story("Bag negative scenarios")
 @allure.title("Update item quantity to zero")
