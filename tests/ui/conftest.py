@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from selenium import webdriver
@@ -20,16 +22,33 @@ def driver(pytestconfig):
 
     options.page_load_strategy = "eager"
 
-    driver = webdriver.Chrome(options=options)
-    driver.maximize_window()
+    if os.getenv("CI") == "true":
+        options.add_argument("--headless=new")
+        options.add_argument("--window-size=1920,1080")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
 
-    pytestconfig.browser_name = driver.capabilities.get(
-        "browserName",
-        "Unknown",
+    driver = webdriver.Chrome(options=options)
+
+    if os.getenv("CI") != "true":
+        driver.maximize_window()
+
+    setattr(
+        pytestconfig,
+        "browser_name",
+        driver.capabilities.get(
+            "browserName",
+            "Unknown",
+        ),
     )
-    pytestconfig.browser_version = driver.capabilities.get(
-        "browserVersion",
-        "Unknown",
+
+    setattr(
+        pytestconfig,
+        "browser_version",
+        driver.capabilities.get(
+            "browserVersion",
+            "Unknown",
+        ),
     )
 
     yield driver

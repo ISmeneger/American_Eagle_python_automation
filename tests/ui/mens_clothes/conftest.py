@@ -6,6 +6,7 @@ from ui.pages.product_page import ProductPage
 from ui.pages.shopping_cart_page import ShoppingCartPage
 from ui.steps.product_catalog_steps import ProductCatalogSteps
 from ui.steps.product_cart_steps import ProductCartSteps
+from ui.pages.mens_clothes_page import MensClothesPage
 
 
 @pytest.fixture
@@ -36,3 +37,8 @@ def cart_page(driver):
 @pytest.fixture
 def product_cart_steps(driver):
     return ProductCartSteps(driver)
+
+
+@pytest.fixture
+def mens_clothes_page(driver):
+    return MensClothesPage(driver)

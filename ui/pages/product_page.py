@@ -1,17 +1,18 @@
+from selenium.common.exceptions import (
+    ElementClickInterceptedException,
+    StaleElementReferenceException,
+    TimeoutException,
+)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from ui.pages.base_page import BasePage
-from selenium.common.exceptions import (
-    ElementClickInterceptedException,
-    StaleElementReferenceException,
-    TimeoutException,
-)
 
 
 class ProductPage(BasePage):
+
     SIZE_DROPDOWN = (
         By.CSS_SELECTOR,
         "div[data-test-dropdown-toggle]"
@@ -28,9 +29,14 @@ class ProductPage(BasePage):
         "div[data-test-dropdown-toggle] span[data-test-text]"
     )
 
-    PRODUCT_PRICE = (
+    SALE_PRICE = (
         By.CSS_SELECTOR,
-        "div.product-sale-price, div[data-testid='list-price']"
+        "[data-testid='sale-price']"
+    )
+
+    LIST_PRICE = (
+        By.CSS_SELECTOR,
+        "[data-testid='list-price']"
     )
 
     ADD_TO_BAG_BUTTON = (
@@ -58,7 +64,6 @@ class ProductPage(BasePage):
 
         for attempt in range(max_attempts):
             try:
-                # Закрываем popup, если он уже успел появиться
                 self.close_popup_if_present()
 
                 size_dropdown = self.wait_for_clickable(
@@ -69,15 +74,14 @@ class ProductPage(BasePage):
                     .scroll_to_element(size_dropdown) \
                     .perform()
 
-                # Открываем dropdown только если он ещё закрыт
                 if (
-                        size_dropdown.get_attribute("aria-expanded")
-                        != "true"
+                    size_dropdown.get_attribute(
+                        "aria-expanded"
+                    )
+                    != "true"
                 ):
                     size_dropdown.click()
 
-                # Получаем элемент заново через locator,
-                # чтобы не работать со старым WebElement
                 self.wait.until(
                     lambda driver:
                     driver.find_element(
@@ -98,7 +102,9 @@ class ProductPage(BasePage):
                         "No available sizes found"
                     )
 
-                first_available_size = available_sizes[0]
+                first_available_size = (
+                    available_sizes[0]
+                )
 
                 expected_size = (
                     first_available_size
@@ -116,33 +122,52 @@ class ProductPage(BasePage):
                     lambda driver:
                     driver.find_element(
                         *self.SELECTED_SIZE_TEXT
-                    ).text.strip() == expected_size
+                    ).text.strip()
+                    == expected_size
                 )
 
                 return
 
             except (
-                    ElementClickInterceptedException,
-                    StaleElementReferenceException,
-                    TimeoutException,
+                ElementClickInterceptedException,
+                StaleElementReferenceException,
+                TimeoutException,
             ):
                 self.close_popup_if_available()
 
                 if attempt == max_attempts - 1:
                     raise
 
+        raise AssertionError(
+            "Failed to select product size"
+        )
+
     def get_selected_size(self) -> str:
         return (
-            self.wait_for_visible(
+            self.get_text(
                 self.SELECTED_SIZE_TEXT
             )
-            .text
             .strip()
         )
 
     def get_product_price(self) -> str:
-        return self.get_text(
-            self.PRODUCT_PRICE
+        sale_prices = self.driver.find_elements(
+            *self.SALE_PRICE
+        )
+
+        for sale_price in sale_prices:
+            if sale_price.is_displayed():
+                price_text = sale_price.text.strip()
+
+                if price_text:
+                    return price_text
+
+        return (
+            self.wait_for_visible(
+                self.LIST_PRICE
+            )
+            .text
+            .strip()
         )
 
     def click_add_to_bag_button(self):
@@ -150,17 +175,12 @@ class ProductPage(BasePage):
             self.ADD_TO_BAG_BUTTON
         )
 
-        self.wait_for_visible(
-            self.ADDED_TO_BAG_MESSAGE
-        )
-
-        self.wait_for_clickable(
-            self.VIEW_BAG_BUTTON
-        )
-
     def get_added_to_bag_message(self) -> str:
-        return self.get_text(
-            self.ADDED_TO_BAG_MESSAGE
+        return (
+            self.get_text(
+                self.ADDED_TO_BAG_MESSAGE
+            )
+            .strip()
         )
 
     def open_shopping_bag(self):
@@ -168,29 +188,35 @@ class ProductPage(BasePage):
             self.VIEW_BAG_BUTTON
         )
 
-        navigation_wait = WebDriverWait(
+        WebDriverWait(
             self.driver,
-            30,
-        )
-
-        navigation_wait.until(
+            30
+        ).until(
             EC.url_contains("/cart")
         )
 
-    def is_increase_quantity_button_enabled(self) -> bool:
-        return self.wait_for_visible(
+    def is_increase_quantity_button_enabled(
+        self,
+    ) -> bool:
+        button = self.wait_for_visible(
             self.INCREASE_QUANTITY_BUTTON
-        ).is_enabled()
+        )
+
+        return button.is_enabled()
 
     def increase_quantity(self):
         self.click(
             self.INCREASE_QUANTITY_BUTTON
         )
 
-    def increase_quantity_until_disabled(self) -> int:
+    def increase_quantity_until_disabled(
+        self,
+    ) -> int:
         quantity = 1
 
-        while self.is_increase_quantity_button_enabled():
+        while (
+            self.is_increase_quantity_button_enabled()
+        ):
             self.increase_quantity()
             quantity += 1
 

@@ -1,7 +1,12 @@
-from selenium.common.exceptions import TimeoutException
+from decimal import Decimal
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import (
+    StaleElementReferenceException,
+    TimeoutException,
+)
 
 from ui.pages.base_page import BasePage
 
@@ -25,6 +30,41 @@ class MensClothesPage(BasePage):
     PRODUCT_ITEMS = (
         By.CSS_SELECTOR,
         "img[data-test='product-image']"
+    )
+
+    SORT_BY_BUTTON = (
+        By.CSS_SELECTOR,
+        "button[data-test-accordion='Sort By']"
+    )
+
+    PRICE_LOW_TO_HIGH = (
+        By.XPATH,
+        "//label[normalize-space()='Price: Low to High']"
+    )
+
+    PRODUCT_CARDS = (
+        By.CSS_SELECTOR,
+        "[data-test-details]"
+    )
+
+    SALE_PRICE = (
+        By.CSS_SELECTOR,
+        "[data-testid='sale-price']"
+    )
+
+    LIST_PRICE = (
+        By.CSS_SELECTOR,
+        "[data-testid='list-price']"
+    )
+
+    PRICE_FILTER_BUTTON = (
+        By.CSS_SELECTOR,
+        "button[data-test-accordion='Price']"
+    )
+
+    PRICE_25_TO_50_CHECKBOX = (
+        By.CSS_SELECTOR,
+        "[data-test-checkbox='$25 - $50'] input[type='checkbox']"
     )
 
     def move_to_men_menu(self):
@@ -97,3 +137,95 @@ class MensClothesPage(BasePage):
         first_product.click()
 
         return product_name
+
+    def select_price_low_to_high(self):
+        sort_button = self.wait_for_clickable(
+            self.SORT_BY_BUTTON
+        )
+
+        if (
+                sort_button.get_attribute("aria-expanded")
+                != "true"
+        ):
+            sort_button.click()
+
+        self.click(self.PRICE_LOW_TO_HIGH)
+
+    def get_product_prices(self) -> list[Decimal]:
+        max_attempts = 3
+
+        for attempt in range(max_attempts):
+            try:
+                product_cards = self.wait.until(
+                    EC.visibility_of_all_elements_located(
+                        self.PRODUCT_CARDS
+                    )
+                )
+
+                prices = []
+
+                for product_card in product_cards:
+                    sale_prices = product_card.find_elements(
+                        *self.SALE_PRICE
+                    )
+
+                    if sale_prices:
+                        price_text = (
+                            sale_prices[0]
+                            .text
+                            .strip()
+                        )
+                    else:
+                        list_prices = product_card.find_elements(
+                            *self.LIST_PRICE
+                        )
+
+                        if not list_prices:
+                            continue
+
+                        price_text = (
+                            list_prices[0]
+                            .text
+                            .strip()
+                        )
+
+                    price = Decimal(
+                        price_text
+                        .replace("$", "")
+                        .replace(",", "")
+                        .strip()
+                    )
+
+                    prices.append(price)
+
+                if prices:
+                    return prices
+
+            except StaleElementReferenceException:
+                if attempt == max_attempts - 1:
+                    raise
+
+        raise AssertionError(
+            "Product prices were not found"
+        )
+
+    def select_price_filter_25_to_50(self):
+        price_filter_button = self.wait_for_clickable(
+            self.PRICE_FILTER_BUTTON
+        )
+
+        if (
+                price_filter_button.get_attribute("aria-expanded")
+                != "true"
+        ):
+            price_filter_button.click()
+
+        checkbox = self.wait_for_present(
+            self.PRICE_25_TO_50_CHECKBOX
+        )
+
+        if not checkbox.is_selected():
+            self.driver.execute_script(
+                "arguments[0].click();",
+                checkbox,
+            )

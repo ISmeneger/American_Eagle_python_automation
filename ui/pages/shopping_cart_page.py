@@ -1,12 +1,13 @@
 from decimal import Decimal
 
-from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
 
 from ui.pages.base_page import BasePage
 
 
 class ShoppingCartPage(BasePage):
+
     QUANTITY_OF_ITEMS = (
         By.CSS_SELECTOR,
         "h2[data-test-items-qty-msg]"
@@ -62,9 +63,13 @@ class ShoppingCartPage(BasePage):
         "span[data-test-free-shipping]"
     )
 
-    CART_PRODUCT_PRICE = (
+    CART_SALE_PRICE = (
         By.CSS_SELECTOR,
-        "span[data-test-cart-item-sale-price], "
+        "span[data-test-cart-item-sale-price]"
+    )
+
+    CART_REGULAR_PRICE = (
+        By.CSS_SELECTOR,
         "span[data-test-cart-item-price]"
     )
 
@@ -106,7 +111,9 @@ class ShoppingCartPage(BasePage):
 
     def get_quantity_of_items_text(self) -> str:
         return (
-            self.get_text(self.QUANTITY_OF_ITEMS)
+            self.get_text(
+                self.QUANTITY_OF_ITEMS
+            )
             .splitlines()[0]
             .strip()
         )
@@ -145,8 +152,11 @@ class ShoppingCartPage(BasePage):
         )
 
     def get_product_name(self) -> str:
-        return self.get_text(
-            self.PRODUCT_NAME
+        return (
+            self.get_text(
+                self.PRODUCT_NAME
+            )
+            .strip()
         )
 
     def get_product_size(self) -> str:
@@ -174,8 +184,11 @@ class ShoppingCartPage(BasePage):
         ).click()
 
     def get_empty_bag_message(self) -> str:
-        return self.get_text(
-            self.EMPTY_BAG_MESSAGE
+        return (
+            self.get_text(
+                self.EMPTY_BAG_MESSAGE
+            )
+            .strip()
         )
 
     def click_sign_in_button(self):
@@ -184,18 +197,38 @@ class ShoppingCartPage(BasePage):
         )
 
     def get_cart_page_header(self) -> str:
-        return self.get_text(
-            self.CART_PAGE_HEADER
+        return (
+            self.get_text(
+                self.CART_PAGE_HEADER
+            )
+            .strip()
         )
 
-    def is_free_shipping_message_displayed(self) -> bool:
+    def is_free_shipping_message_displayed(
+        self,
+    ) -> bool:
         return self.is_visible(
             self.FREE_SHIPPING_MESSAGE
         )
 
     def get_product_price_in_cart(self) -> str:
-        return self.get_text(
-            self.CART_PRODUCT_PRICE
+        sale_prices = self.driver.find_elements(
+            *self.CART_SALE_PRICE
+        )
+
+        for sale_price in sale_prices:
+            if sale_price.is_displayed():
+                price_text = sale_price.text.strip()
+
+                if price_text:
+                    return price_text
+
+        return (
+            self.wait_for_visible(
+                self.CART_REGULAR_PRICE
+            )
+            .text
+            .strip()
         )
 
     def get_subtotal_text(self) -> str:
@@ -206,29 +239,42 @@ class ShoppingCartPage(BasePage):
             .strip()
         )
 
-    def wait_for_subtotal(self, expected_subtotal: str) -> str:
+    def wait_for_subtotal(
+        self,
+        expected_subtotal: str,
+    ) -> str:
         self.wait.until(
             lambda driver:
             self.wait_for_visible(
                 self.SUBTOTAL_VALUE
-            ).text.strip() == expected_subtotal
+            ).text.strip()
+            == expected_subtotal
         )
 
-        return self.get_text(
-            self.SUBTOTAL_VALUE
-        ).strip()
+        return (
+            self.get_text(
+                self.SUBTOTAL_VALUE
+            )
+            .strip()
+        )
 
-    def is_increase_quantity_button_enabled(self) -> bool:
+    def is_increase_quantity_button_enabled(
+        self,
+    ) -> bool:
         button = self.wait_for_visible(
             self.INCREASE_QUANTITY_BUTTON
         )
 
         return button.is_enabled()
 
-    def increase_quantity_until_disabled(self) -> int:
+    def increase_quantity_until_disabled(
+        self,
+    ) -> int:
         quantity = 1
 
-        while self.is_increase_quantity_button_enabled():
+        while (
+            self.is_increase_quantity_button_enabled()
+        ):
             self.increase_product_quantity()
             quantity += 1
 
@@ -244,8 +290,10 @@ class ShoppingCartPage(BasePage):
             ) >= 2
         )
 
-        cart_item_elements = self.driver.find_elements(
-            *self.CART_ITEMS
+        cart_item_elements = (
+            self.driver.find_elements(
+                *self.CART_ITEMS
+            )
         )
 
         cart_items = []
@@ -281,19 +329,30 @@ class ShoppingCartPage(BasePage):
                 *self.CART_ITEM_SALE_PRICE
             )
 
-            if sale_prices:
-                price_text = sale_prices[0].text
+            if (
+                sale_prices
+                and sale_prices[0].is_displayed()
+                and sale_prices[0].text.strip()
+            ):
+                price_text = (
+                    sale_prices[0]
+                    .text
+                    .strip()
+                )
+
             else:
                 price_text = (
                     item.find_element(
                         *self.CART_ITEM_REGULAR_PRICE
                     )
                     .text
+                    .strip()
                 )
 
             price = Decimal(
                 price_text
                 .replace("$", "")
+                .replace(",", "")
                 .strip()
             )
 
@@ -307,4 +366,3 @@ class ShoppingCartPage(BasePage):
             )
 
         return cart_items
-
