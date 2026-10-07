@@ -82,15 +82,34 @@ class MensClothesPage(BasePage):
         )
 
     def click_view_all_categories(self):
-        view_all = self.wait_for_clickable(
-            self.VIEW_ALL_CATEGORIES
-        )
+        max_attempts = 3
 
-        ActionChains(self.driver) \
-            .move_to_element(view_all) \
-            .perform()
+        for attempt in range(max_attempts):
+            try:
+                self.close_popup_if_present()
 
-        view_all.click()
+                view_all = self.wait_for_clickable(
+                    self.VIEW_ALL_CATEGORIES
+                )
+
+                ActionChains(self.driver) \
+                    .scroll_to_element(view_all) \
+                    .move_to_element(view_all) \
+                    .perform()
+
+                view_all.click()
+
+                return
+
+            except (
+                    ElementNotInteractableException,
+                    StaleElementReferenceException,
+                    TimeoutException,
+            ):
+                self.move_to_men_menu()
+
+                if attempt == max_attempts - 1:
+                    raise
 
     def get_mens_page_title(self) -> str:
         return self.get_text(
@@ -139,17 +158,47 @@ class MensClothesPage(BasePage):
         return product_name
 
     def select_price_low_to_high(self):
+        self.close_popup_if_present()
+
         sort_button = self.wait_for_clickable(
             self.SORT_BY_BUTTON
         )
 
-        if (
-                sort_button.get_attribute("aria-expanded")
-                != "true"
-        ):
+        if sort_button.get_attribute("aria-expanded") != "true":
             sort_button.click()
 
-        self.click(self.PRICE_LOW_TO_HIGH)
+        self.wait.until(
+            EC.visibility_of_element_located(
+                self.PRICE_LOW_TO_HIGH
+            )
+        )
+
+        product_cards_before_sort = self.wait.until(
+            EC.presence_of_all_elements_located(
+                self.PRODUCT_CARDS
+            )
+        )
+
+        first_product_before_sort = product_cards_before_sort[0]
+
+        self.click(
+            self.PRICE_LOW_TO_HIGH
+        )
+
+        try:
+            self.wait.until(
+                EC.staleness_of(
+                    first_product_before_sort
+                )
+            )
+        except TimeoutException:
+            pass
+
+        self.wait.until(
+            EC.visibility_of_all_elements_located(
+                self.PRODUCT_CARDS
+            )
+        )
 
     def get_product_prices(self) -> list[Decimal]:
         max_attempts = 3
@@ -229,3 +278,16 @@ class MensClothesPage(BasePage):
                 "arguments[0].click();",
                 checkbox,
             )
+
+    def wait_until_prices_are_in_range(
+            self,
+            min_price: Decimal,
+            max_price: Decimal,
+    ):
+        self.wait.until(
+            lambda driver:
+            all(
+                min_price <= price <= max_price
+                for price in self.get_product_prices()
+            )
+        )

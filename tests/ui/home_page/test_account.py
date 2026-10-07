@@ -9,6 +9,8 @@ pytestmark = [
     pytest.mark.home_page,
 ]
 
+ACCOUNT_TITLE = "Account"
+
 
 @pytest.mark.smoke
 @pytest.mark.positive
@@ -25,6 +27,6 @@ def test_account_panel_content(driver):
         home_page.header.click_account_button()
 
     with allure.step("Verify account panel content"):
-        assert home_page.header.get_account_title_text() == "Account"
+        assert home_page.header.get_account_title_text() == ACCOUNT_TITLE
         assert home_page.header.is_sign_in_button_visible()
         assert home_page.header.is_create_account_button_visible()

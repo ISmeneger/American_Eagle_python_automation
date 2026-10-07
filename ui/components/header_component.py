@@ -183,9 +183,6 @@ class HeaderComponent(BasePage):
     def is_create_account_button_visible(self) -> bool:
         return self.is_visible(self.CREATE_ACCOUNT_BUTTON)
 
-    def is_favorites_icon_visible(self) -> bool:
-        return self.is_visible(self.FAVORITES_ICON)
-
     def click_favorites_button(self):
         self.click_nearest_interactive(self.FAVORITES_ICON)
 

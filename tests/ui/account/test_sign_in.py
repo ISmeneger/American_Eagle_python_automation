@@ -12,6 +12,16 @@ EMAIL_VALIDATION_MESSAGE = (
     "Please enter a valid email address."
 )
 
+ANTI_BOT_SIGN_IN_REASON = (
+    "Automated sign-in is blocked by the site's anti-bot "
+    "protection. Manual sign-in works successfully."
+)
+
+PASSWORD_VALIDATION_SKIP_REASON = (
+    "Password validation cannot be reached reliably because "
+    "automated sign-in is blocked by anti-bot protection."
+)
+
 
 @pytest.mark.negative
 @allure.feature("Account")
@@ -43,7 +53,7 @@ def test_sign_in_with_empty_email(sign_in_page):
     with allure.step("Click Continue"):
         sign_in_page.click_continue_button()
 
-    with allure.step("Verify invalid email validation message"):
+    with allure.step("Verify empty email validation message"):
         assert sign_in_page.is_invalid_email_error_visible()
         assert (
             sign_in_page.get_invalid_email_error_message()
@@ -56,10 +66,7 @@ def test_sign_in_with_empty_email(sign_in_page):
 @allure.story("Sign In")
 @allure.title("Successful sign in")
 @pytest.mark.skip(
-    reason=(
-        "Automated sign-in is blocked by the site's anti-bot "
-        "protection. Manual sign-in works successfully."
-    )
+    reason=ANTI_BOT_SIGN_IN_REASON
 )
 def test_successful_sign_in():
     pass
@@ -70,52 +77,7 @@ def test_successful_sign_in():
 @allure.story("Sign In")
 @allure.title("Sign in with invalid password")
 @pytest.mark.skip(
-    reason=(
-        "Password validation cannot be reached reliably "
-        "because automated sign-in is blocked by anti-bot protection."
-    )
+    reason=PASSWORD_VALIDATION_SKIP_REASON
 )
 def test_sign_in_with_invalid_password():
-    pass
-
-
-@pytest.mark.negative
-@allure.feature("Account")
-@allure.story("Sign In")
-@allure.title("Sign in with empty password")
-@pytest.mark.skip(
-    reason=(
-        "Password validation cannot be reached reliably "
-        "because automated sign-in is blocked by anti-bot protection."
-    )
-)
-def test_sign_in_with_empty_password():
-    pass
-
-
-@pytest.mark.negative
-@allure.feature("Account")
-@allure.story("Sign In")
-@allure.title("Sign in with short password")
-@pytest.mark.skip(
-    reason=(
-        "Password validation cannot be reached reliably "
-        "because automated sign-in is blocked by anti-bot protection."
-    )
-)
-def test_sign_in_with_short_password():
-    pass
-
-
-@pytest.mark.negative
-@allure.feature("Account")
-@allure.story("Sign In")
-@allure.title("Sign in with long password")
-@pytest.mark.skip(
-    reason=(
-        "Password validation cannot be reached reliably "
-        "because automated sign-in is blocked by anti-bot protection."
-    )
-)
-def test_sign_in_with_long_password():
     pass

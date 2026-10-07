@@ -9,6 +9,8 @@ pytestmark = [
     pytest.mark.home_page,
 ]
 
+FAVORITES_TITLE = "Favorites"
+
 
 @pytest.mark.smoke
 @pytest.mark.positive
@@ -25,4 +27,7 @@ def test_favorites_title_after_click(driver):
         home_page.header.click_favorites_button()
 
     with allure.step("Verify Favorites page title"):
-        assert home_page.header.get_favorites_title_text() == "Favorites"
+        assert (
+            home_page.header.get_favorites_title_text()
+            == FAVORITES_TITLE
+        )

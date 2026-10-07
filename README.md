@@ -13,16 +13,17 @@
 
 ### 📊 Allure Report
 
-После публикации отчёта через GitHub Pages он будет доступен по постоянной ссылке:
+После успешного CI-запуска актуальный отчёт публикуется через GitHub Pages по постоянной ссылке:
 
 ➡️ **[Open Allure Report](https://ismeneger.github.io/American_Eagle_python_automation/)**
 
 ### ✅ Текущее состояние набора тестов
 
-- **52 тестовых сценария** в текущем наборе;
-- **16 API тестов**;
-- **35 UI тестов**;
-- **1 smoke test** конфигурации проекта;
+- **50 тестовых сценариев** в текущем наборе;
+- **16 API тестов** — 16 passed;
+- **33 UI теста** — 28 passed, 4 skipped, 1 xfailed;
+- **1 smoke test** конфигурации проекта — passed;
+- последний полный локальный прогон: **45 passed, 4 skipped, 1 xfailed, 0 failed**;
 - `skip` используется для сценариев, которые блокируются anti-bot-защитой сайта;
 - `xfail` используется для известного дефекта поиска;
 - API и UI запускаются независимо в GitHub Actions;
@@ -40,6 +41,7 @@
 - [🏗 Архитектура проекта](#architecture)
 - [✅ Покрытие](#coverage)
 - [⚠️ Ограничения и anti-bot protection](#limitations)
+- [📝 Тест-план](#test-plan)
 - [🏷 Pytest markers](#markers)
 - [🚀 Локальный запуск](#local-run)
 - [🔐 Credentials](#credentials)
@@ -331,7 +333,21 @@ API-набор включает:
 
 Успешный sign-in вручную работает, но автоматизированный вход блокируется anti-bot protection.
 
-Поэтому успешный login и некоторые password-сценарии намеренно имеют `skip`.
+В активном автоматическом наборе оставлены:
+
+- негативные проверки `invalid email` и `empty email`;
+- `successful sign-in` как документированный `skip`;
+- один representative password-сценарий (`invalid password`) как документированный `skip`.
+
+Дополнительно предусмотрены сценарии:
+
+- `empty password`;
+- `short password`;
+- `long password`.
+
+Они не дублируются отдельными `skip`-тестами в активном наборе, потому что из-за anti-bot невозможно стабильно перейти к серверной password validation. Эти проверки остаются частью тестового покрытия и зафиксированы в Test Plan.
+
+Такой подход позволяет не раздувать Allure Report несколькими одинаково недоступными сценариями и при этом явно документировать предусмотренную QA-логику.
 
 ### Известный defect поиска
 
@@ -360,6 +376,35 @@ American Eagle возвращает товары / рекомендации да
 - изменение доступных товаров и скидок.
 
 Для таких случаев в проекте используются explicit waits, повторное получение элементов и ограниченная retry-логика там, где это оправдано.
+
+[⬆️ К содержанию](#contents)
+
+---
+
+<a id="test-plan"></a>
+## 📝 Тест-план
+
+Для проекта подготовлен отдельный **Automation Test Plan**, адаптированный под Python-версию проекта.
+
+В документе описаны:
+
+- цели автоматизации;
+- UI и REST API scope;
+- out of scope;
+- типы и категории тестов;
+- тестовые данные и управление состоянием;
+- технологический стек;
+- архитектура автоматизации;
+- локальное и CI-окружение;
+- CI/CD стратегия;
+- Allure Reporting;
+- anti-bot ограничения;
+- password validation scenarios, которые предусмотрены, но не дублируются в активном наборе из-за anti-bot;
+- известный `xfail` сценарий поиска;
+- риски и меры снижения;
+- критерии успешного завершения.
+
+📄 **[Открыть American Eagle Python Test Plan (PDF)](docs/American_Eagle_Python_TestPlan_2026.pdf)**
 
 [⬆️ К содержанию](#contents)
 
@@ -680,6 +725,9 @@ American_Eagle_python_automation
 │   └── workflows
 │       └── tests.yml
 │
+├── docs
+│   └── American_Eagle_Python_TestPlan_2026.pdf
+│
 ├── api
 │   └── ...
 │
@@ -792,6 +840,7 @@ American_Eagle_python_automation
 - ✅ GitHub Actions CI
 - ✅ GitHub Pages
 - ✅ GitHub Secrets
+- ✅ Test Plan
 - ✅ Headless Chrome
 - ✅ Работа с anti-bot ограничениями production-сайта
 - ✅ Самостоятельная реализация вне учебной программы

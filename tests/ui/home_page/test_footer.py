@@ -9,6 +9,8 @@ pytestmark = [
     pytest.mark.home_page,
 ]
 
+COPYRIGHT_TEXT = "AEO Management Co. All Rights Reserved"
+
 
 @pytest.mark.positive
 @allure.feature("Home Page")
@@ -25,7 +27,7 @@ def test_footer_content_is_displayed_correctly(driver):
 
     with allure.step("Verify copyright text"):
         assert (
-            "AEO Management Co. All Rights Reserved"
+            COPYRIGHT_TEXT
             in home_page.footer.get_copyright_text()
         )
 

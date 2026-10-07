@@ -3,6 +3,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 
 from ui.pages.base_page import BasePage
 from selenium.common.exceptions import (
+    ElementNotInteractableException,
     StaleElementReferenceException,
     TimeoutException,
 )
@@ -58,15 +59,34 @@ class JeansPage(BasePage):
                     raise
 
     def click_mens_view_all(self):
-        view_all = self.wait_for_clickable(
-            self.MEN_JEANS_VIEW_ALL
-        )
+        max_attempts = 3
 
-        ActionChains(self.driver) \
-            .move_to_element(view_all) \
-            .perform()
+        for attempt in range(max_attempts):
+            try:
+                self.close_popup_if_present()
 
-        view_all.click()
+                view_all = self.wait_for_clickable(
+                    self.MEN_JEANS_VIEW_ALL
+                )
+
+                ActionChains(self.driver) \
+                    .scroll_to_element(view_all) \
+                    .move_to_element(view_all) \
+                    .perform()
+
+                view_all.click()
+
+                return
+
+            except (
+                    ElementNotInteractableException,
+                    StaleElementReferenceException,
+                    TimeoutException,
+            ):
+                self.move_to_jeans_menu()
+
+                if attempt == max_attempts - 1:
+                    raise
 
     def open_first_available_product(self) -> str:
         first_product = self.wait_for_clickable(

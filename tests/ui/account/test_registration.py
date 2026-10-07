@@ -1,7 +1,6 @@
 import allure
 import pytest
 
-
 from utils.test_data_generator import (
     generate_email,
     generate_first_name,
@@ -33,6 +32,10 @@ EMPTY_POSTAL_CODE_MESSAGE = "Please enter your zip/postal code."
     [
         "user.gmail.com",
         "",
+    ],
+    ids=[
+        "invalid_format",
+        "empty",
     ],
 )
 @allure.feature("Account")
@@ -205,8 +208,8 @@ def test_registration_with_empty_zip_code(
 @pytest.mark.negative
 @allure.feature("Account")
 @allure.story("Registration")
-@allure.title("Register without birth date and terms acceptance")
-def test_registration_without_birth_date_and_terms(
+@allure.title("Register without birth date")
+def test_registration_without_birth_date(
     registration_context,
 ):
     account_page = registration_context["account_page"]
@@ -225,17 +228,54 @@ def test_registration_without_birth_date_and_terms(
             password,
         )
 
-    with allure.step("Fill zip code without birth date and terms"):
+    with allure.step("Fill required data without birth date"):
         account_page.input_zip_code(POSTAL_CODE)
         account_page.scroll_to_submit_button()
+        account_page.accept_terms_and_conditions()
 
-    with allure.step("Verify form cannot be submitted"):
+    with allure.step("Verify account cannot be created without birth date"):
+        assert not account_page.is_submit_account_button_enabled()
+
+
+@pytest.mark.negative
+@allure.feature("Account")
+@allure.story("Registration")
+@allure.title("Register without terms acceptance")
+def test_registration_without_terms_acceptance(
+    registration_context,
+):
+    account_page = registration_context["account_page"]
+    registration_steps = registration_context["registration_steps"]
+
+    email = generate_email()
+    first_name = generate_first_name()
+    last_name = generate_last_name()
+    password = generate_password()
+
+    with allure.step("Fill registration form"):
+        registration_steps.fill_registration_form(
+            email,
+            first_name,
+            last_name,
+            password,
+        )
+
+    with allure.step("Fill required registration data"):
+        account_page.input_zip_code(POSTAL_CODE)
+        account_page.select_birth_date(
+            MONTH_VALUE,
+            DAY_VALUE,
+        )
+        account_page.scroll_to_submit_button()
+
+    with allure.step(
+        "Verify account cannot be created without terms acceptance"
+    ):
         assert not account_page.is_terms_checkbox_selected()
         assert not account_page.is_submit_account_button_enabled()
 
 
 @pytest.mark.positive
-@pytest.mark.defect
 @allure.feature("Account")
 @allure.story("Registration")
 @allure.title("Successful account creation")
