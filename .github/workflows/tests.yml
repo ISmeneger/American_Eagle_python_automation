@@ -29,12 +29,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run API tests
+      - name: Run API and project smoke tests
         env:
           AE_GUEST_AUTH: ${{ secrets.AE_GUEST_AUTH }}
         run: |
           rm -rf allure-results
-          pytest tests/api -v --alluredir=allure-results
+          pytest tests/api tests/test_smoke.py -v --alluredir=allure-results
 
       - name: Upload API Allure results
         if: always()
