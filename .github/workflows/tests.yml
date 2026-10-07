@@ -33,7 +33,8 @@ jobs:
         env:
           AE_GUEST_AUTH: ${{ secrets.AE_GUEST_AUTH }}
         run: |
-          pytest tests/api -v
+          rm -rf allure-results
+          pytest tests/api -v --alluredir=allure-results
 
       - name: Upload API Allure results
         if: always()
@@ -62,7 +63,8 @@ jobs:
 
       - name: Run UI tests
         run: |
-          pytest tests/ui -v
+          rm -rf allure-results
+          pytest tests/ui -v --alluredir=allure-results
 
       - name: Upload UI Allure results
         if: always()
