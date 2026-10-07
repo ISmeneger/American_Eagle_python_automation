@@ -2,6 +2,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 
 from ui.pages.base_page import BasePage
+from selenium.common.exceptions import (
+    StaleElementReferenceException,
+    TimeoutException,
+)
 
 
 class JeansPage(BasePage):
@@ -23,18 +27,35 @@ class JeansPage(BasePage):
     )
 
     def move_to_jeans_menu(self):
-        jeans_menu = self.wait_for_visible(
-            self.JEANS_MENU
-        )
+        max_attempts = 3
 
-        ActionChains(self.driver) \
-            .scroll_to_element(jeans_menu) \
-            .move_to_element(jeans_menu) \
-            .perform()
+        for attempt in range(max_attempts):
+            try:
+                self.close_popup_if_present()
 
-        self.wait_for_visible(
-            self.MEN_JEANS_VIEW_ALL
-        )
+                jeans_menu = self.wait_for_visible(
+                    self.JEANS_MENU
+                )
+
+                ActionChains(self.driver) \
+                    .scroll_to_element(jeans_menu) \
+                    .move_to_element(jeans_menu) \
+                    .perform()
+
+                self.wait_for_visible(
+                    self.MEN_JEANS_VIEW_ALL
+                )
+
+                return
+
+            except (
+                    StaleElementReferenceException,
+                    TimeoutException,
+            ):
+                self.close_popup_if_available()
+
+                if attempt == max_attempts - 1:
+                    raise
 
     def click_mens_view_all(self):
         view_all = self.wait_for_clickable(
