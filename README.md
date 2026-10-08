@@ -24,9 +24,10 @@
 - **33 UI теста** — 28 passed, 4 skipped, 1 xfailed;
 - **1 smoke test** конфигурации проекта — passed;
 - последний полный локальный прогон: **45 passed, 4 skipped, 1 xfailed, 0 failed**;
+- текущий CI-прогон также включает все **50 test cases** в едином Allure Report;
 - `skip` используется для сценариев, которые блокируются anti-bot-защитой сайта;
 - `xfail` используется для известного дефекта поиска;
-- API и UI запускаются независимо в GitHub Actions;
+- API + project smoke и UI запускаются в отдельных jobs GitHub Actions;
 - результаты объединяются в единый Allure Report.
 
 ---
@@ -566,9 +567,9 @@ Workflow находится в:
 Он разделён на независимые jobs:
 
 ```text
-api-tests ──► api-allure-results ──┐
-                                   ├──► allure-report ──► GitHub Pages
-ui-tests ──► ui-allure-results ────┘
+api-tests (API + smoke) ──► api-allure-results ──┐
+                                                 ├──► allure-report ──► GitHub Pages
+ui-tests ───────────────► ui-allure-results ─────┘
 ```
 
 ### `api-tests`
@@ -580,9 +581,10 @@ ui-tests ──► ui-allure-results ────┘
 - запуск:
 
 ```bash
-pytest tests/api -v
+pytest tests/api tests/test_smoke.py -v --alluredir=allure-results
 ```
 
+- запуск **16 API тестов + 1 project smoke test**;
 - сохранение `allure-results` как artifact `api-allure-results`.
 
 ### `ui-tests`
@@ -593,7 +595,7 @@ pytest tests/api -v
 - запуск UI-тестов:
 
 ```bash
-pytest tests/ui -v
+pytest tests/ui -v --alluredir=allure-results
 ```
 
 - Chrome автоматически запускается в headless-режиме при `CI=true`;
@@ -601,11 +603,11 @@ pytest tests/ui -v
 
 ### `allure-report`
 
-После завершения API и UI jobs:
+После завершения API + smoke и UI jobs:
 
-1. скачиваются API Allure results;
+1. скачиваются Allure results из job `api-tests` (API + smoke);
 2. скачиваются UI Allure results;
-3. результаты объединяются;
+3. результаты всех **50 test cases** объединяются;
 4. восстанавливается история предыдущих Allure запусков;
 5. формируется единый Allure Report;
 6. отчёт публикуется в ветку `gh-pages`;
@@ -622,10 +624,10 @@ Workflow запускается:
 Ожидаемая схема выполнения:
 
 ```text
-api-tests ✅
-ui-tests  ✅
-      ↓
-allure-report ✅
+api-tests (API + smoke) ✅
+ui-tests                 ✅
+          ↓
+allure-report             ✅
 ```
 
 [⬆️ К содержанию](#contents)
@@ -635,7 +637,7 @@ allure-report ✅
 <a id="allure"></a>
 ## 📊 Allure Report
 
-API и UI тесты сохраняют Allure results отдельно, после чего CI объединяет их в единый отчёт.
+Job `api-tests` сохраняет результаты API + project smoke, а `ui-tests` — результаты UI. После этого CI объединяет их в единый Allure Report на **50 test cases**.
 
 После включения GitHub Pages актуальный отчёт доступен по ссылке:
 
@@ -644,7 +646,7 @@ API и UI тесты сохраняют Allure results отдельно, пос�
 В отчёте можно посмотреть:
 
 - общий результат запуска;
-- API и UI suites;
+- API, UI и project smoke suites;
 - отдельные test cases;
 - feature / story / title;
 - шаги выполнения;
@@ -675,10 +677,10 @@ allure open allure-report
 
 Каждый запуск GitHub Actions отдельно сохраняет:
 
-- `api-allure-results`;
-- `ui-allure-results`.
+- `api-allure-results` — результаты **16 API + 1 smoke**;
+- `ui-allure-results` — результаты **33 UI**.
 
-Это позволяет запускать API и UI независимо, а затем формировать общий Allure Report на отдельном CI-этапе.
+Затем оба artifacts объединяются на отдельном CI-этапе в общий Allure Report на **50 test cases**.
 
 [⬆️ К содержанию](#contents)
 
@@ -797,11 +799,11 @@ American_Eagle_python_automation
 
 В проекте реализовано:
 
-- раздельное выполнение API и UI тестов;
+- раздельное выполнение **API + smoke** и UI тестов;
 - headless Chrome для UI в CI;
 - GitHub Secret для API credential;
 - сохранение Allure results даже при ошибках тестового job;
-- отдельные artifacts для API и UI;
+- отдельные artifacts для API + smoke и UI;
 - объединение результатов;
 - отдельный job для формирования Allure Report;
 - публикация отчёта через `gh-pages`;
@@ -816,7 +818,9 @@ American_Eagle_python_automation
 - обработка `StaleElementReferenceException`;
 - sale / regular price logic;
 - динамический выбор доступного SKU и товара;
-- отказ от фиксированных `sleep` в основных сценариях.
+- отказ от фиксированных `sleep` в основных сценариях;
+- ограниченная retry-логика только для нестабильных взаимодействий с динамическим DOM;
+- ответственность Page Objects очищена от дублирующей логики после финального рефакторинга.
 
 [⬆️ К содержанию](#contents)
 

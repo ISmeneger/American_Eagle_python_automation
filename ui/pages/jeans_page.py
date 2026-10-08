@@ -1,12 +1,12 @@
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.action_chains import ActionChains
-
-from ui.pages.base_page import BasePage
 from selenium.common.exceptions import (
     ElementNotInteractableException,
     StaleElementReferenceException,
     TimeoutException,
 )
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
+
+from ui.pages.base_page import BasePage
 
 
 class JeansPage(BasePage):
@@ -83,10 +83,11 @@ class JeansPage(BasePage):
                     StaleElementReferenceException,
                     TimeoutException,
             ):
-                self.move_to_jeans_menu()
 
                 if attempt == max_attempts - 1:
                     raise
+
+                self.move_to_jeans_menu()
 
     def open_first_available_product(self) -> str:
         first_product = self.wait_for_clickable(

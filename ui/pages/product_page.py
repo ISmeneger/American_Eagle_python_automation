@@ -54,11 +54,6 @@ class ProductPage(BasePage):
         "button[data-test-btn='viewBag']"
     )
 
-    INCREASE_QUANTITY_BUTTON = (
-        By.XPATH,
-        "//button[@aria-label='increase']"
-    )
-
     def select_first_available_size(self):
         max_attempts = 3
 
@@ -194,30 +189,3 @@ class ProductPage(BasePage):
         ).until(
             EC.url_contains("/cart")
         )
-
-    def is_increase_quantity_button_enabled(
-        self,
-    ) -> bool:
-        button = self.wait_for_visible(
-            self.INCREASE_QUANTITY_BUTTON
-        )
-
-        return button.is_enabled()
-
-    def increase_quantity(self):
-        self.click(
-            self.INCREASE_QUANTITY_BUTTON
-        )
-
-    def increase_quantity_until_disabled(
-        self,
-    ) -> int:
-        quantity = 1
-
-        while (
-            self.is_increase_quantity_button_enabled()
-        ):
-            self.increase_quantity()
-            quantity += 1
-
-        return quantity

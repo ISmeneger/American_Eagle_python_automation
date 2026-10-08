@@ -1,3 +1,4 @@
+from selenium.common import TimeoutException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 
@@ -87,8 +88,9 @@ class HeaderComponent(BasePage):
     )
 
     BAG_BUTTON = (
-        By.CSS_SELECTOR,
-        "a.qa-tnav-bag-icon"
+        By.XPATH,
+        "//*[local-name()='svg' and @data-testid='icon-bag']"
+        "/ancestor::*[self::a or self::button][1]"
     )
 
     BAG_TITLE = (
@@ -131,9 +133,6 @@ class HeaderComponent(BasePage):
 
     def is_account_icon_visible(self) -> bool:
         return self.is_visible(self.ACCOUNT_ICON)
-
-    def is_favorites_button_visible(self) -> bool:
-        return self.is_visible(self.FAVORITES_BUTTON)
 
     def is_bag_button_visible(self) -> bool:
         return self.is_visible(self.BAG_BUTTON)
@@ -190,7 +189,35 @@ class HeaderComponent(BasePage):
         return self.get_text(self.FAVORITES_TITLE)
 
     def click_bag_button(self):
-        self.click(self.BAG_BUTTON)
+        bag_button = self.wait_for_clickable(
+            self.BAG_BUTTON
+        )
+
+        current_url = self.driver.current_url
+
+        bag_button.click()
+
+        try:
+            self.wait.until(
+                lambda driver:
+                driver.current_url != current_url
+            )
+            return
+
+        except TimeoutException:
+            bag_button = self.wait_for_visible(
+                self.BAG_BUTTON
+            )
+
+            self.driver.execute_script(
+                "arguments[0].click();",
+                bag_button
+            )
+
+            self.wait.until(
+                lambda driver:
+                driver.current_url != current_url
+            )
 
     def get_bag_title_text(self) -> str:
         return self.get_text(self.BAG_TITLE)

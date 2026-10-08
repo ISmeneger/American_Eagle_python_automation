@@ -53,11 +53,6 @@ class ShoppingCartPage(BasePage):
         "a[data-testid='sign-in-link']"
     )
 
-    CART_PAGE_HEADER = (
-        By.CSS_SELECTOR,
-        "h1.page-header"
-    )
-
     FREE_SHIPPING_MESSAGE = (
         By.CSS_SELECTOR,
         "span[data-test-free-shipping]"
@@ -107,6 +102,11 @@ class ShoppingCartPage(BasePage):
     CART_ITEM_SALE_PRICE = (
         By.CSS_SELECTOR,
         "span[data-test-cart-item-sale-price]"
+    )
+
+    CART_ITEM_NAME_LINK = (
+        By.CSS_SELECTOR,
+        "h3[data-test-cart-item-name] a"
     )
 
     def get_quantity_of_items_text(self) -> str:
@@ -196,14 +196,6 @@ class ShoppingCartPage(BasePage):
             self.SIGN_IN_BUTTON
         )
 
-    def get_cart_page_header(self) -> str:
-        return (
-            self.get_text(
-                self.CART_PAGE_HEADER
-            )
-            .strip()
-        )
-
     def is_free_shipping_message_displayed(
         self,
     ) -> bool:
@@ -228,14 +220,6 @@ class ShoppingCartPage(BasePage):
                 self.CART_REGULAR_PRICE
             )
             .text
-            .strip()
-        )
-
-    def get_subtotal_text(self) -> str:
-        return (
-            self.get_text(
-                self.SUBTOTAL_VALUE
-            )
             .strip()
         )
 
@@ -299,12 +283,14 @@ class ShoppingCartPage(BasePage):
         cart_items = []
 
         for item in cart_item_elements:
-            name = (
-                item.find_element(
-                    *self.CART_ITEM_NAME
+            name = self.wait.until(
+                lambda driver: (
+                    item.find_element(
+                        *self.CART_ITEM_NAME_LINK
+                    )
+                    .text
+                    .strip()
                 )
-                .text
-                .strip()
             )
 
             size = (

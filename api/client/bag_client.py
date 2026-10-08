@@ -49,15 +49,6 @@ class BagClient(BaseClient):
             timeout=20,
         )
 
-        return self.session.post(
-            url=f"{BASE_URL}{BAG_ITEMS_ENDPOINT}",
-            headers=self.get_headers(
-                content_type="application/json"
-            ),
-            json=payload,
-            timeout=20,
-        )
-
     def update_item(
         self,
         item_id: str,
