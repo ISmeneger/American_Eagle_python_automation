@@ -1,3 +1,4 @@
+````
 # American Eagle Python Automation
 
 ## 🧪 UI & API Test Automation Project
@@ -116,7 +117,7 @@ Python-версия не является учебным заданием или
 - разделил API и UI jobs;
 - добавил GitHub Secrets для API credential;
 - реализовал публикацию объединённого Allure Report;
-- стабилизировал тесты для работы с динамическим DOM, popup-окнами и `StaleElementReferenceException`.
+- стабилизировал тесты для работы с динамическим DOM, marketing/regional popup-окнами, `StaleElementReferenceException` и `ElementClickInterceptedException`.
 
 Для меня этот проект — демонстрация того, что знания Python из курса ИТМО я могу применять самостоятельно в полноценном AQA-проекте, а не только в рамках учебных упражнений.
 
@@ -372,11 +373,14 @@ American Eagle возвращает товары / рекомендации да
 - медленная загрузка;
 - временная недоступность страницы;
 - повторное появление marketing popup;
+- региональный popup выбора страны доставки;
+- перекрытие интерактивных элементов popup overlays;
 - перерисовка DOM;
 - `StaleElementReferenceException`;
+- `ElementClickInterceptedException`;
 - изменение доступных товаров и скидок.
 
-Для таких случаев в проекте используются explicit waits, повторное получение элементов и ограниченная retry-логика там, где это оправдано.
+Для таких случаев в проекте используются explicit waits, централизованное закрытие blocking overlays, повторное получение элементов после изменения DOM, fallback-навигация и ограниченная retry-логика там, где это оправдано.
 
 [⬆️ К содержанию](#contents)
 
@@ -813,9 +817,11 @@ American_Eagle_python_automation
 Отдельное внимание уделено стабильности тестов на реальном production-сайте:
 
 - explicit waits;
-- обработка popup overlays;
+- обработка marketing и regional popup overlays;
+- централизованное закрытие blocking overlays;
 - повторное получение элементов после DOM update;
-- обработка `StaleElementReferenceException`;
+- обработка `StaleElementReferenceException` и `ElementClickInterceptedException`;
+- fallback-навигация при исчезновении временных UI-элементов;
 - sale / regular price logic;
 - динамический выбор доступного SKU и товара;
 - отказ от фиксированных `sleep` в основных сценариях;
@@ -861,3 +867,5 @@ GitHub: [ISmeneger](https://github.com/ISmeneger)
 Проект разработан самостоятельно как развитие навыков **Python QA Automation** после обучения тестированию ПО в Университете ИТМО и как расширение профессионального AQA-портфолио вторым языком программирования.
 
 [⬆️ К содержанию](#contents)
+
+````
