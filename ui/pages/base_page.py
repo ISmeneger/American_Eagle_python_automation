@@ -29,6 +29,11 @@ class BasePage:
         "button.close[aria-label='Close']"
     )
 
+    LOCATION_POPUP_CLOSE_BUTTON = (
+        By.CSS_SELECTOR,
+        'button[data-test-btn="close"][aria-label="Close"]'
+    )
+
     def __init__(self, driver: WebDriver):
         self.driver = driver
         self.wait = WebDriverWait(driver, 10)
@@ -95,6 +100,7 @@ class BasePage:
             pass
 
     def close_popup_if_available(self):
+        self.close_location_popup_if_present()
         popup_wait = WebDriverWait(self.driver, 2)
 
         try:
@@ -203,3 +209,45 @@ class BasePage:
         return self.wait.until(
             EC.presence_of_element_located(locator)
         )
+
+    def close_location_popup_if_present(self):
+        try:
+            close_button = WebDriverWait(
+                self.driver,
+                3
+            ).until(
+                EC.element_to_be_clickable(
+                    self.LOCATION_POPUP_CLOSE_BUTTON
+                )
+            )
+
+            try:
+                close_button.click()
+            except (
+                    ElementClickInterceptedException,
+                    StaleElementReferenceException,
+            ):
+                close_button = self.driver.find_element(
+                    *self.LOCATION_POPUP_CLOSE_BUTTON
+                )
+
+                self.driver.execute_script(
+                    "arguments[0].click();",
+                    close_button,
+                )
+
+            WebDriverWait(
+                self.driver,
+                3
+            ).until(
+                EC.invisibility_of_element_located(
+                    self.LOCATION_POPUP_CLOSE_BUTTON
+                )
+            )
+
+        except (
+                TimeoutException,
+                NoSuchElementException,
+                StaleElementReferenceException,
+        ):
+            pass

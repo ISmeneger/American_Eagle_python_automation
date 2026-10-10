@@ -118,45 +118,56 @@ class MensClothesPage(BasePage):
         )
 
     def open_first_available_product(self) -> str:
-        try:
-            products = self.wait.until(
-                EC.visibility_of_all_elements_located(
-                    self.PRODUCT_ITEMS
+        max_attempts = 3
+
+        for attempt in range(max_attempts):
+            try:
+                self.close_popup_if_available()
+
+                products = self.wait.until(
+                    EC.visibility_of_all_elements_located(
+                        self.PRODUCT_ITEMS
+                    )
                 )
-            )
-        except TimeoutException:
-            self.close_popup_if_available()
 
-            products = self.wait.until(
-                EC.visibility_of_all_elements_located(
-                    self.PRODUCT_ITEMS
+                if not products:
+                    raise AssertionError(
+                        "No products found in Men's catalog"
+                    )
+
+                first_product = self.wait.until(
+                    EC.element_to_be_clickable(
+                        products[0]
+                    )
                 )
-            )
 
-        if not products:
-            raise AssertionError(
-                "No products found in Men's catalog"
-            )
+                product_name = (
+                        first_product.get_attribute("alt")
+                        or ""
+                ).strip()
 
-        first_product = self.wait.until(
-            EC.element_to_be_clickable(
-                products[0]
-            )
+                if not product_name:
+                    raise AssertionError(
+                        "Product name was not found"
+                    )
+
+                first_product.click()
+
+                return product_name
+
+            except (
+                    ElementClickInterceptedException,
+                    StaleElementReferenceException,
+                    TimeoutException,
+            ):
+                self.close_popup_if_available()
+
+                if attempt == max_attempts - 1:
+                    raise
+
+        raise AssertionError(
+            "Failed to open first available product"
         )
-
-        product_name = (
-                first_product.get_attribute("alt")
-                or ""
-        ).strip()
-
-        if not product_name:
-            raise AssertionError(
-                "Product name was not found"
-            )
-
-        first_product.click()
-
-        return product_name
 
     def select_price_low_to_high(self):
         self.close_popup_if_present()

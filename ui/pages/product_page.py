@@ -8,10 +8,15 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from ui.components.header_component import HeaderComponent
 from ui.pages.base_page import BasePage
 
 
 class ProductPage(BasePage):
+
+    def __init__(self, driver):
+        super().__init__(driver)
+        self.header = HeaderComponent(driver)
 
     SIZE_DROPDOWN = (
         By.CSS_SELECTOR,
@@ -179,9 +184,16 @@ class ProductPage(BasePage):
         )
 
     def open_shopping_bag(self):
-        self.click(
-            self.VIEW_BAG_BUTTON
-        )
+        try:
+            self.click(
+                self.VIEW_BAG_BUTTON
+            )
+
+        except (
+                TimeoutException,
+                ElementClickInterceptedException,
+        ):
+            self.header.click_bag_button()
 
         WebDriverWait(
             self.driver,
