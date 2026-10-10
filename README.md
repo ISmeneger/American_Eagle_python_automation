@@ -1,4 +1,3 @@
-````
 # American Eagle Python Automation
 
 ## 🧪 UI & API Test Automation Project
@@ -867,5 +866,3 @@ GitHub: [ISmeneger](https://github.com/ISmeneger)
 Проект разработан самостоятельно как развитие навыков **Python QA Automation** после обучения тестированию ПО в Университете ИТМО и как расширение профессионального AQA-портфолио вторым языком программирования.
 
 [⬆️ К содержанию](#contents)
-
-````
