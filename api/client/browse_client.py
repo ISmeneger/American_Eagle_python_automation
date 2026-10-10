@@ -15,6 +15,8 @@ class BrowseClient(BaseClient):
             self,
             category_id: str,
             include_authorization: bool = True,
+            offset: int = 0,
+            rows: int = 30,
     ) -> requests.Response:
 
         if include_authorization:
@@ -35,33 +37,53 @@ class BrowseClient(BaseClient):
         return self.session.get(
             url=f"{BASE_URL}{endpoint}",
             headers=headers,
+            params={
+                "offset": offset,
+                "rows": rows,
+            },
             timeout=20,
         )
 
     def get_product_ids(
-        self,
-        category_id: str,
+            self,
+            category_id: str,
+            pages: int = 3,
+            rows: int = 30,
     ) -> list[str]:
 
-        response = self.get_category_response(category_id)
+        product_ids = []
 
-        response.raise_for_status()
+        for page in range(pages):
+            offset = page * rows
 
-        response_body = response.json()
+            response = self.get_category_response(
+                category_id=category_id,
+                offset=offset,
+                rows=rows,
+            )
 
-        products = (
-            response_body
-            .get("data", {})
-            .get("relationships", {})
-            .get("products", {})
-            .get("data", [])
-        )
+            response.raise_for_status()
 
-        product_ids = [
-            product["id"]
-            for product in products
-            if product.get("id")
-        ]
+            response_body = response.json()
+
+            products = (
+                response_body
+                .get("data", {})
+                .get("relationships", {})
+                .get("products", {})
+                .get("data", [])
+            )
+
+            page_product_ids = [
+                product["id"]
+                for product in products
+                if product.get("id")
+            ]
+
+            product_ids.extend(page_product_ids)
+
+            if len(page_product_ids) < rows:
+                break
 
         if not product_ids:
             raise RuntimeError(
