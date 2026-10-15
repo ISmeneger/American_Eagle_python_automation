@@ -9,6 +9,7 @@ from selenium.common.exceptions import (
     StaleElementReferenceException,
     TimeoutException,
 )
+from selenium.webdriver.support.wait import WebDriverWait
 
 from ui.pages.base_page import BasePage
 
@@ -312,14 +313,26 @@ class MensClothesPage(BasePage):
         )
 
     def is_price_low_to_high_selected(self) -> bool:
-        return self.wait.until(
+        return WebDriverWait(
+            self.driver,
+            15,
+            ignored_exceptions=(
+                StaleElementReferenceException,
+            )
+        ).until(
             EC.element_located_to_be_selected(
                 self.PRICE_LOW_TO_HIGH_RADIO
             )
         )
 
     def is_price_filter_25_to_50_selected(self) -> bool:
-        return self.wait.until(
+        return WebDriverWait(
+            self.driver,
+            15,
+            ignored_exceptions=(
+                StaleElementReferenceException,
+            )
+        ).until(
             EC.element_located_to_be_selected(
                 self.PRICE_25_TO_50_CHECKBOX
             )
