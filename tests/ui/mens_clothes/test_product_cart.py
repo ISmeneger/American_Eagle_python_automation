@@ -19,6 +19,23 @@ pytestmark = [
 ]
 
 
+def assert_cart_summary_matches_products(cart_page, products_total: Decimal):
+    """Check the currently observed summary: merchandise plus displayed shipping.
+
+    This is the behavior observed for this Shopping Bag environment, not a
+    general assertion that every site's subtotal includes shipping.
+    """
+    shipping_cost = cart_page.get_shipping_cost()
+    expected_total = products_total + shipping_cost
+    displayed_total = cart_page.wait_for_subtotal(f"${expected_total:.2f}")
+    actual_total = Decimal(displayed_total.replace("$", "").replace(",", "").strip())
+    assert actual_total == expected_total, (
+        f"Summary mismatch: products={products_total}, "
+        f"shipping={shipping_cost}, displayed={actual_total}"
+    )
+
+
+
 @allure.feature("Men's Clothes")
 @allure.story("Product and Bag")
 @allure.title("Add item from catalog to bag")
@@ -134,24 +151,9 @@ def test_change_product_quantity_and_verify_subtotal(
             == TWO_ITEMS_TEXT
         )
 
-    with allure.step("Calculate expected subtotal"):
-        expected_subtotal = product["price"] * 2
-
-    with allure.step(
-        "Wait for Shopping Bag subtotal to be recalculated"
-    ):
-        subtotal_text = cart_page.wait_for_subtotal(
-            f"${expected_subtotal:.2f}"
-        )
-
-    with allure.step("Verify subtotal"):
-        subtotal = Decimal(
-            subtotal_text
-            .replace("$", "")
-            .strip()
-        )
-
-        assert subtotal == expected_subtotal
+    with allure.step("Verify summary after quantity update"):
+        products_total = product["price"] * 2
+        assert_cart_summary_matches_products(cart_page, products_total)
 
 
 @allure.feature("Men's Clothes")
@@ -181,6 +183,12 @@ def test_free_shipping_is_displayed_when_threshold_is_reached(
             )
         )
 
+    if required_quantity > MAX_ALLOWED_QUANTITY:
+        pytest.skip(
+            "Selected item is too inexpensive to reach free shipping "
+            f"within the {MAX_ALLOWED_QUANTITY}-item limit"
+        )
+
     if required_quantity > 1:
         with allure.step("Open product editing"):
             cart_page.click_edit_item_button()
@@ -197,17 +205,10 @@ def test_free_shipping_is_displayed_when_threshold_is_reached(
         with allure.step("Update Shopping Bag"):
             cart_page.update_bag()
 
-        expected_subtotal = (
-            product["price"]
-            * required_quantity
-        )
+        products_total = product["price"] * required_quantity
 
-        with allure.step(
-            "Wait for Shopping Bag subtotal to be recalculated"
-        ):
-            cart_page.wait_for_subtotal(
-                f"${expected_subtotal:.2f}"
-            )
+        with allure.step("Wait for Shopping Bag summary to update"):
+            assert_cart_summary_matches_products(cart_page, products_total)
 
     with allure.step(
         "Verify Free Shipping message is displayed"
@@ -359,22 +360,78 @@ def test_two_different_products_in_cart(
             == second_product["price"]
         )
 
-    with allure.step("Verify Shopping Bag subtotal"):
-        expected_subtotal = (
-            first_product["price"]
-            + second_product["price"]
+    with allure.step("Verify Shopping Bag summary"):
+        products_total = first_product["price"] + second_product["price"]
+        assert_cart_summary_matches_products(cart_page, products_total)
+
+
+@allure.feature("Men's Clothes")
+@allure.story("Multiple products in Shopping Bag")
+@allure.title(
+    "TC-AE-106: Remove one of two products and verify remaining item"
+)
+def test_remove_one_of_two_products_from_cart(
+    home_page,
+    product_cart_steps,
+    product_page,
+    cart_page,
+):
+    with allure.step("Add first Men's product to Shopping Bag"):
+        first_product = (
+            product_cart_steps
+            .add_first_mens_product_to_bag()
         )
 
-        subtotal_text = (
-            cart_page.wait_for_subtotal(
-                f"${expected_subtotal:.2f}"
-            )
+    with allure.step("Return to American Eagle home page"):
+        home_page.open(close_overlays=False)
+
+    with allure.step("Add Jeans product to Shopping Bag"):
+        second_product = (
+            product_cart_steps
+            .add_first_jeans_product_to_bag()
         )
 
-        subtotal = Decimal(
-            subtotal_text
-            .replace("$", "")
-            .strip()
+    with allure.step("Open Shopping Bag"):
+        product_page.open_shopping_bag()
+
+    with allure.step("Verify both products are present"):
+        cart_items = cart_page.get_cart_items()
+
+        assert len(cart_items) == 2
+
+        cart_names = {
+            item["name"]
+            for item in cart_items
+        }
+
+        assert first_product["name"] in cart_names
+        assert second_product["name"] in cart_names
+        assert first_product["name"] != second_product["name"]
+
+    with allure.step("Remove the first product"):
+        cart_page.remove_product_by_name(
+            first_product["name"]
         )
 
-        assert subtotal == expected_subtotal
+    with allure.step("Verify the correct product remains"):
+        remaining_items = cart_page.get_cart_items(
+            expected_count=1
+        )
+
+        assert len(remaining_items) == 1
+
+        remaining_item = remaining_items[0]
+
+        assert remaining_item["name"] == second_product["name"]
+        assert remaining_item["size"] == second_product["size"]
+        assert remaining_item["quantity"] == 1
+        assert remaining_item["price"] == second_product["price"]
+
+    with allure.step("Verify Shopping Bag contains one item"):
+        assert (
+            cart_page.get_quantity_of_items_text()
+            == ONE_ITEM_TEXT
+        )
+
+    with allure.step("Verify summary after removing one item"):
+        assert_cart_summary_matches_products(cart_page, second_product["price"])

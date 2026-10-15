@@ -74,6 +74,12 @@ class ShoppingCartPage(BasePage):
         "[data-testid='row-total-value']"
     )
 
+    SHIPPING_VALUE = (
+        By.CSS_SELECTOR,
+        "[data-testid='row-shipping'] "
+        "[data-testid='row-shipping-value']"
+    )
+
     CART_ITEMS = (
         By.CSS_SELECTOR,
         "div.cart-item-info"
@@ -107,6 +113,11 @@ class ShoppingCartPage(BasePage):
     CART_ITEM_NAME_LINK = (
         By.CSS_SELECTOR,
         "h3[data-test-cart-item-name] a"
+    )
+
+    CART_ITEM_CONTAINER = (
+        By.CSS_SELECTOR,
+        "div[data-testid='commerce-item']"
     )
 
     def get_quantity_of_items_text(self) -> str:
@@ -227,19 +238,18 @@ class ShoppingCartPage(BasePage):
         self,
         expected_subtotal: str,
     ) -> str:
-        self.wait.until(
-            lambda driver:
-            self.wait_for_visible(
-                self.SUBTOTAL_VALUE
-            ).text.strip()
-            == expected_subtotal
-        )
+        """Wait until the checkout summary displays the expected amount."""
+        def expected_value_is_visible(driver):
+            for element in driver.find_elements(*self.SUBTOTAL_VALUE):
+                if element.is_displayed():
+                    value = element.text.strip()
+                    if value == expected_subtotal:
+                        return value
+            return False
 
-        return (
-            self.get_text(
-                self.SUBTOTAL_VALUE
-            )
-            .strip()
+        return self.wait.until(
+            expected_value_is_visible,
+            message=f"Sub Total did not reach {expected_subtotal}",
         )
 
     def is_increase_quantity_button_enabled(
@@ -264,14 +274,14 @@ class ShoppingCartPage(BasePage):
 
         return quantity
 
-    def get_cart_items(self) -> list[dict]:
+    def get_cart_items(
+            self,
+            expected_count: int = 2,
+    ) -> list[dict]:
         self.wait.until(
-            lambda driver:
-            len(
-                driver.find_elements(
-                    *self.CART_ITEMS
-                )
-            ) >= 2
+            lambda driver: len(
+                driver.find_elements(*self.CART_ITEMS)
+            ) == expected_count
         )
 
         cart_item_elements = (
@@ -302,13 +312,11 @@ class ShoppingCartPage(BasePage):
                 .strip()
             )
 
-            quantity = (
-                item.find_element(
-                    *self.CART_ITEM_QUANTITY
-                )
-                .text
-                .replace("Qty:", "")
-                .strip()
+            quantity = self.wait.until(
+                lambda driver: (
+                    item.find_element(*self.CART_ITEM_QUANTITY)
+                    .text.replace("Qty:", "").strip()
+                ) or False
             )
 
             sale_prices = item.find_elements(
@@ -342,6 +350,12 @@ class ShoppingCartPage(BasePage):
                 .strip()
             )
 
+            if not quantity.isdigit():
+                raise AssertionError(
+                    f"Invalid quantity for product '{name}': "
+                    f"{quantity!r}"
+                )
+
             cart_items.append(
                 {
                     "name": name,
@@ -352,3 +366,61 @@ class ShoppingCartPage(BasePage):
             )
 
         return cart_items
+
+    def remove_product_by_name(self, product_name: str):
+        def find_remove_button(driver):
+            cart_items = driver.find_elements(
+                *self.CART_ITEM_CONTAINER
+            )
+
+            for item in cart_items:
+                name_elements = item.find_elements(
+                    *self.CART_ITEM_NAME_LINK
+                )
+
+                if not name_elements:
+                    continue
+
+                name = name_elements[0].text.strip()
+
+                if name == product_name:
+                    buttons = item.find_elements(
+                        *self.REMOVE_BUTTON
+                    )
+
+                    if buttons:
+                        return buttons[0]
+
+            return False
+
+        remove_button = self.wait.until(
+            find_remove_button
+        )
+
+        ActionChains(self.driver) \
+            .scroll_to_element(remove_button) \
+            .perform()
+
+        remove_button.click()
+
+    def get_shipping_cost(self) -> Decimal:
+        """Read the displayed shipping charge after it appears in the summary."""
+        def shipping_text_is_ready(driver):
+            for element in driver.find_elements(*self.SHIPPING_VALUE):
+                if element.is_displayed():
+                    value = element.text.strip()
+                    if value:
+                        return value
+            return False
+
+        shipping_text = self.wait.until(
+            shipping_text_is_ready,
+            message="Shipping amount did not appear in Shopping Bag",
+        )
+
+        if shipping_text.lower() in ("free", "$0", "$0.00"):
+            return Decimal("0.00")
+
+        return Decimal(
+            shipping_text.replace("$", "").replace(",", "").strip()
+        )
