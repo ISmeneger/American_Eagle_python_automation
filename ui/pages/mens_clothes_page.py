@@ -279,15 +279,14 @@ class MensClothesPage(BasePage):
         )
 
     def select_price_filter_25_to_50(self):
+        self.close_blocking_overlays_if_available()
+
         price_filter_button = self.wait_for_clickable(
             self.PRICE_FILTER_BUTTON
         )
 
-        if (
-                price_filter_button.get_attribute("aria-expanded")
-                != "true"
-        ):
-            price_filter_button.click()
+        if price_filter_button.get_attribute("aria-expanded") != "true":
+            self.click(self.PRICE_FILTER_BUTTON)
 
         checkbox = self.wait_for_present(
             self.PRICE_25_TO_50_CHECKBOX
@@ -313,13 +312,15 @@ class MensClothesPage(BasePage):
         )
 
     def is_price_low_to_high_selected(self) -> bool:
-        radio = self.wait_for_present(
-            self.PRICE_LOW_TO_HIGH_RADIO
+        return self.wait.until(
+            EC.element_located_to_be_selected(
+                self.PRICE_LOW_TO_HIGH_RADIO
+            )
         )
-        return radio.is_selected()
 
     def is_price_filter_25_to_50_selected(self) -> bool:
-        checkbox = self.wait_for_present(
-            self.PRICE_25_TO_50_CHECKBOX
+        return self.wait.until(
+            EC.element_located_to_be_selected(
+                self.PRICE_25_TO_50_CHECKBOX
+            )
         )
-        return checkbox.is_selected()
