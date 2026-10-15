@@ -1,7 +1,6 @@
 from selenium.common.exceptions import (
     ElementClickInterceptedException,
     NoSuchElementException,
-    NoSuchShadowRootException,
     StaleElementReferenceException,
     TimeoutException,
 )
@@ -12,26 +11,21 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 
 class BasePage:
-
     COOKIE_BUTTON = (
         By.CSS_SELECTOR,
-        "button[aria-label='dismiss cookie message']"
+        "button[aria-label='dismiss cookie message']",
     )
-
     POPUP_SHADOW_HOST = (
         By.CSS_SELECTOR,
-        "div.bloomreach-weblayer"
+        "div.bloomreach-weblayer",
     )
-
     POPUP_CLOSE_BUTTON = (
         By.CSS_SELECTOR,
-        "button.close-button[aria-label='Close'], "
-        "button.close[aria-label='Close']"
+        'button.close-button[aria-label="Close"]',
     )
-
     LOCATION_POPUP_CLOSE_BUTTON = (
         By.CSS_SELECTOR,
-        'button[data-test-btn="close"][aria-label="Close"]'
+        'button[data-test-btn="close"][aria-label="Close"]',
     )
 
     def __init__(self, driver: WebDriver):
@@ -48,34 +42,18 @@ class BasePage:
         return self.driver.current_url
 
     def wait_for_visible(self, locator):
-        return self.wait.until(
-            EC.visibility_of_element_located(locator)
-        )
+        return self.wait.until(EC.visibility_of_element_located(locator))
 
     def wait_for_clickable(self, locator):
-        return self.wait.until(
-            EC.element_to_be_clickable(locator)
-        )
+        return self.wait.until(EC.element_to_be_clickable(locator))
 
     def click(self, locator):
         element = self.wait_for_clickable(locator)
-
         try:
             element.click()
-
         except ElementClickInterceptedException:
-            self.close_popup_if_available()
-
-            self.wait.until(
-                lambda driver:
-                not any(
-                    popup.is_displayed()
-                    for popup in driver.find_elements(
-                        *self.POPUP_SHADOW_HOST
-                    )
-                )
-            )
-
+            self.close_blocking_overlays_if_available()
+            self.wait.until(lambda driver: not self._has_visible_bloomreach())
             self.wait_for_clickable(locator).click()
 
     def get_text(self, locator) -> str:
@@ -85,96 +63,50 @@ class BasePage:
         return self.wait_for_visible(locator).is_displayed()
 
     def accept_cookies_if_available(self):
+        # No two-second wait when the cookie banner isn't on the page.
+        for button in self.driver.find_elements(*self.COOKIE_BUTTON):
+            try:
+                if button.is_displayed() and button.is_enabled():
+                    button.click()
+                    return
+            except (StaleElementReferenceException, ElementClickInterceptedException):
+                continue
+
+    def _has_visible_bloomreach(self) -> bool:
         try:
-            cookie_wait = WebDriverWait(self.driver, 2)
+            return any(
+                host.is_displayed()
+                for host in self.driver.find_elements(*self.POPUP_SHADOW_HOST)
+            )
+        except StaleElementReferenceException:
+            return True
 
-            cookie_wait.until(
-                EC.element_to_be_clickable(self.COOKIE_BUTTON)
-            ).click()
-
-        except (
-            TimeoutException,
-            NoSuchElementException,
-            StaleElementReferenceException,
-        ):
-            pass
+    def close_popup_if_present(self) -> bool:
+        # Preserve the working JS approach for Bloomreach's open Shadow DOM.
+        return bool(self.driver.execute_script("""
+            const hosts = document.querySelectorAll('div.bloomreach-weblayer');
+            for (const host of hosts) {
+                const root = host.shadowRoot || host;
+                const button = root.querySelector(
+                    'button.close-button[aria-label="Close"]'
+                );
+                if (button) {
+                    button.click();
+                    return true;
+                }
+            }
+            return false;
+        """))
 
     def close_popup_if_available(self):
         self.close_location_popup_if_present()
-        popup_wait = WebDriverWait(self.driver, 2)
 
         try:
-            popup_wait.until(self._try_close_popup)
-
+            WebDriverWait(self.driver, 5).until(
+                lambda driver: self.close_popup_if_present()
+            )
         except TimeoutException:
             pass
-
-    def close_popup_if_present(self) -> bool:
-        try:
-            shadow_hosts = self.driver.find_elements(
-                *self.POPUP_SHADOW_HOST
-            )
-
-            for shadow_host in shadow_hosts:
-                if not shadow_host.is_displayed():
-                    continue
-
-                shadow_root = shadow_host.shadow_root
-
-                close_buttons = shadow_root.find_elements(
-                    *self.POPUP_CLOSE_BUTTON
-                )
-
-                if not close_buttons:
-                    continue
-
-                close_button = close_buttons[0]
-
-                if (
-                        close_button.is_displayed()
-                        and close_button.is_enabled()
-                ):
-                    self.driver.execute_script(
-                        "arguments[0].click();",
-                        close_button,
-                    )
-                    return True
-
-        except (
-                NoSuchElementException,
-                NoSuchShadowRootException,
-                StaleElementReferenceException,
-                ElementClickInterceptedException,
-        ):
-            pass
-
-        return False
-
-    def _try_close_popup(self, driver):
-        try:
-            shadow_host = driver.find_element(
-                *self.POPUP_SHADOW_HOST
-            )
-
-            shadow_root = shadow_host.shadow_root
-
-            close_button = shadow_root.find_element(
-                *self.POPUP_CLOSE_BUTTON
-            )
-
-            if close_button.is_displayed() and close_button.is_enabled():
-                close_button.click()
-                return True
-
-        except (
-            NoSuchElementException,
-            NoSuchShadowRootException,
-            StaleElementReferenceException,
-            ElementClickInterceptedException,
-        ):
-            return False
-
-        return False
 
     def close_blocking_overlays_if_available(self):
         self.accept_cookies_if_available()
@@ -182,72 +114,57 @@ class BasePage:
 
     def click_nearest_interactive(self, locator):
         element = self.wait_for_visible(locator)
-
-        clickable_parent = self.driver.execute_script(
-            """
-            return arguments[0].closest(
-                'button, a, [role="button"]'
-            );
-            """,
-            element,
-        )
-
+        clickable_parent = self.driver.execute_script("""
+            return arguments[0].closest('button, a, [role="button"]');
+        """, element)
         if clickable_parent is None:
             raise AssertionError(
                 f"Clickable parent was not found for locator: {locator}"
             )
-
         self.wait.until(
-            lambda driver:
-            clickable_parent.is_displayed()
+            lambda driver: clickable_parent.is_displayed()
             and clickable_parent.is_enabled()
         )
-
-        clickable_parent.click()
+        try:
+            clickable_parent.click()
+        except ElementClickInterceptedException:
+            self.close_blocking_overlays_if_available()
+            element = self.wait_for_visible(locator)
+            clickable_parent = self.driver.execute_script("""
+                return arguments[0].closest('button, a, [role="button"]');
+            """, element)
+            clickable_parent.click()
 
     def wait_for_present(self, locator):
-        return self.wait.until(
-            EC.presence_of_element_located(locator)
-        )
+        return self.wait.until(EC.presence_of_element_located(locator))
 
     def close_location_popup_if_present(self):
-        try:
-            close_button = WebDriverWait(
-                self.driver,
-                3
-            ).until(
-                EC.element_to_be_clickable(
-                    self.LOCATION_POPUP_CLOSE_BUTTON
-                )
-            )
+        close_buttons = self.driver.find_elements(
+            *self.LOCATION_POPUP_CLOSE_BUTTON
+        )
 
+        for button in close_buttons:
             try:
-                close_button.click()
-            except (
-                    ElementClickInterceptedException,
-                    StaleElementReferenceException,
-            ):
-                close_button = self.driver.find_element(
-                    *self.LOCATION_POPUP_CLOSE_BUTTON
-                )
+                if not button.is_displayed():
+                    continue
 
                 self.driver.execute_script(
                     "arguments[0].click();",
-                    close_button,
+                    button
                 )
 
-            WebDriverWait(
-                self.driver,
-                3
-            ).until(
-                EC.invisibility_of_element_located(
-                    self.LOCATION_POPUP_CLOSE_BUTTON
+                WebDriverWait(self.driver, 3).until(
+                    EC.invisibility_of_element_located(
+                        self.LOCATION_POPUP_CLOSE_BUTTON
+                    )
                 )
-            )
 
-        except (
-                TimeoutException,
-                NoSuchElementException,
-                StaleElementReferenceException,
-        ):
-            pass
+                return
+
+            except (
+                    ElementClickInterceptedException,
+                    NoSuchElementException,
+                    StaleElementReferenceException,
+                    TimeoutException,
+            ):
+                continue

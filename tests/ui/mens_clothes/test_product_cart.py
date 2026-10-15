@@ -19,16 +19,32 @@ pytestmark = [
 ]
 
 
-def assert_cart_summary_matches_products(cart_page, products_total: Decimal):
-    """Check the currently observed summary: merchandise plus displayed shipping.
+def assert_cart_summary_matches_products(
+    cart_page,
+    products_total: Decimal,
+):
+    if products_total >= FREE_SHIPPING_THRESHOLD:
+        cart_page.wait.until(
+            lambda driver:
+                cart_page.get_shipping_cost() == Decimal("0.00"),
+            message="Shipping did not become free after threshold"
+        )
 
-    This is the behavior observed for this Shopping Bag environment, not a
-    general assertion that every site's subtotal includes shipping.
-    """
     shipping_cost = cart_page.get_shipping_cost()
+
     expected_total = products_total + shipping_cost
-    displayed_total = cart_page.wait_for_subtotal(f"${expected_total:.2f}")
-    actual_total = Decimal(displayed_total.replace("$", "").replace(",", "").strip())
+
+    displayed_total = cart_page.wait_for_subtotal(
+        f"${expected_total:.2f}"
+    )
+
+    actual_total = Decimal(
+        displayed_total
+        .replace("$", "")
+        .replace(",", "")
+        .strip()
+    )
+
     assert actual_total == expected_total, (
         f"Summary mismatch: products={products_total}, "
         f"shipping={shipping_cost}, displayed={actual_total}"
@@ -295,7 +311,7 @@ def test_two_different_products_in_cart(
         )
 
     with allure.step("Return to American Eagle home page"):
-        home_page.open(close_overlays=False)
+        home_page.open()
 
     with allure.step("Add first Jeans product to bag"):
         second_product = (
@@ -383,7 +399,7 @@ def test_remove_one_of_two_products_from_cart(
         )
 
     with allure.step("Return to American Eagle home page"):
-        home_page.open(close_overlays=False)
+        home_page.open()
 
     with allure.step("Add Jeans product to Shopping Bag"):
         second_product = (

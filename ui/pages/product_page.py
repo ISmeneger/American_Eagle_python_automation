@@ -64,7 +64,7 @@ class ProductPage(BasePage):
 
         for attempt in range(max_attempts):
             try:
-                self.close_popup_if_present()
+                self.close_blocking_overlays_if_available()
 
                 size_dropdown = self.wait_for_clickable(
                     self.SIZE_DROPDOWN
@@ -74,21 +74,18 @@ class ProductPage(BasePage):
                     .scroll_to_element(size_dropdown) \
                     .perform()
 
-                if (
-                    size_dropdown.get_attribute(
-                        "aria-expanded"
-                    )
-                    != "true"
-                ):
+                size_dropdown = self.wait_for_clickable(
+                    self.SIZE_DROPDOWN
+                )
+
+                if size_dropdown.get_attribute("aria-expanded") != "true":
                     size_dropdown.click()
 
                 self.wait.until(
                     lambda driver:
                     driver.find_element(
                         *self.SIZE_DROPDOWN
-                    ).get_attribute(
-                        "aria-expanded"
-                    ) == "true"
+                    ).get_attribute("aria-expanded") == "true"
                 )
 
                 available_sizes = self.wait.until(
@@ -97,23 +94,13 @@ class ProductPage(BasePage):
                     )
                 )
 
-                if not available_sizes:
-                    raise AssertionError(
-                        "No available sizes found"
-                    )
-
-                first_available_size = (
-                    available_sizes[0]
-                )
+                first_available_size = available_sizes[0]
 
                 expected_size = (
-                    first_available_size
-                    .find_element(
+                    first_available_size.find_element(
                         By.CSS_SELECTOR,
                         "span.sku-size"
-                    )
-                    .text
-                    .strip()
+                    ).text.strip()
                 )
 
                 first_available_size.click()
@@ -122,24 +109,24 @@ class ProductPage(BasePage):
                     lambda driver:
                     driver.find_element(
                         *self.SELECTED_SIZE_TEXT
-                    ).text.strip()
-                    == expected_size
+                    ).text.strip() == expected_size
                 )
 
                 return
 
             except (
-                ElementClickInterceptedException,
-                StaleElementReferenceException,
-                TimeoutException,
+                    ElementClickInterceptedException,
+                    StaleElementReferenceException,
+                    TimeoutException,
             ):
-                self.close_popup_if_available()
+                # A popup may have appeared while selecting the size
+                self.close_blocking_overlays_if_available()
 
                 if attempt == max_attempts - 1:
                     raise
 
         raise AssertionError(
-            "Failed to select product size"
+            "Failed to select first available product size"
         )
 
     def get_selected_size(self) -> str:

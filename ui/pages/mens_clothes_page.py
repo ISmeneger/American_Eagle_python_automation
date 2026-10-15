@@ -4,6 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import (
+    ElementClickInterceptedException,
     ElementNotInteractableException,
     StaleElementReferenceException,
     TimeoutException,
@@ -155,6 +156,8 @@ class MensClothesPage(BasePage):
                     raise AssertionError(
                         "Product name was not found"
                     )
+
+                self.close_popup_if_present()
 
                 first_product.click()
 
