@@ -108,3 +108,64 @@ def test_products_are_filtered_by_price_25_to_50(driver):
             MIN_FILTER_PRICE <= price <= MAX_FILTER_PRICE
             for price in prices
         )
+
+
+@pytest.mark.smoke
+@allure.feature("Men's Clothes")
+@allure.story("Product filtering and sorting")
+@allure.title(
+    "Filter products by price from $25 to $50 "
+    "and sort from low to high"
+)
+def test_products_are_filtered_and_sorted_by_price(driver):
+    mens_clothes_page = MensClothesPage(driver)
+    product_catalog_steps = ProductCatalogSteps(driver)
+
+    with allure.step("Open Men's Clothes catalog"):
+        product_catalog_steps.open_mens_clothes_catalog()
+
+    with allure.step("Sort by Price: Low to High"):
+        mens_clothes_page.select_price_low_to_high()
+
+    with allure.step("Apply price filter $25-$50"):
+        mens_clothes_page.select_price_filter_25_to_50()
+
+    # Проверяем, что обе настройки остались выбранными
+    with allure.step("Verify price filter remains selected"):
+        assert mens_clothes_page.is_price_filter_25_to_50_selected(), (
+            "Price filter $25-$50 is not selected"
+        )
+
+    with allure.step("Verify sorting remains selected"):
+        assert mens_clothes_page.is_price_low_to_high_selected(), (
+            "Sort option Price: Low to High is not selected"
+        )
+
+    with allure.step("Wait for filtered prices"):
+        mens_clothes_page.wait_until_prices_are_in_range(
+            MIN_FILTER_PRICE,
+            MAX_FILTER_PRICE,
+        )
+
+    with allure.step("Collect displayed product prices"):
+        prices = mens_clothes_page.get_product_prices()
+        allure.attach(
+            "\n".join(str(price) for price in prices),
+            name="Displayed product prices",
+            attachment_type=allure.attachment_type.TEXT,
+        )
+
+    with allure.step("Verify prices are within $25-$50"):
+        assert prices, "No product prices found"
+        assert all(
+            MIN_FILTER_PRICE <= price <= MAX_FILTER_PRICE
+            for price in prices
+        ), f"Prices outside selected range: {prices}"
+
+    with allure.step("Verify ascending price order"):
+        assert len(prices) > 1, (
+            "At least two prices are required"
+        )
+        assert prices == sorted(prices), (
+            f"Prices are not sorted ascending: {prices}"
+        )

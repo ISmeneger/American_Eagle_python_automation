@@ -43,6 +43,11 @@ class MensClothesPage(BasePage):
         "//label[normalize-space()='Price: Low to High']"
     )
 
+    PRICE_LOW_TO_HIGH_RADIO = (
+        By.CSS_SELECTOR,
+        "[data-test-radio='Price: Low to High'] input[type='radio']"
+    )
+
     PRODUCT_CARDS = (
         By.CSS_SELECTOR,
         "[data-test-details]"
@@ -303,3 +308,15 @@ class MensClothesPage(BasePage):
                 for price in self.get_product_prices()
             )
         )
+
+    def is_price_low_to_high_selected(self) -> bool:
+        radio = self.wait_for_present(
+            self.PRICE_LOW_TO_HIGH_RADIO
+        )
+        return radio.is_selected()
+
+    def is_price_filter_25_to_50_selected(self) -> bool:
+        checkbox = self.wait_for_present(
+            self.PRICE_25_TO_50_CHECKBOX
+        )
+        return checkbox.is_selected()
