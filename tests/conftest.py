@@ -1,3 +1,4 @@
+import platform
 from pathlib import Path
 
 import allure
@@ -64,9 +65,7 @@ def pytest_sessionfinish(session, exitstatus):
     allure_results = Path("allure-results")
     allure_results.mkdir(exist_ok=True)
 
-    environment_file = (
-        allure_results / "environment.properties"
-    )
+    environment_file = allure_results / "environment.properties"
 
     browser_name = getattr(
         session.config,
@@ -80,20 +79,20 @@ def pytest_sessionfinish(session, exitstatus):
         "N/A",
     )
 
+    environment_data = [
+        "Project=American Eagle Python Automation",
+        f"Language=Python {platform.python_version()}",
+        "Framework=Pytest",
+        "HTTP_Client=requests",
+        f"Browser={browser_name}",
+        f"Browser_Version={browser_version}",
+        f"OS={platform.system()} {platform.release()}",
+        "Environment=Production",
+        "Site=American Eagle",
+    ]
+
     environment_file.write_text(
-        "\n".join(
-            [
-                "Project=American Eagle Python Automation",
-                "Language=Python 3.12.1",
-                "Framework=Pytest",
-                "HTTP_Client=requests",
-                "Browser=" + browser_name,
-                "Browser_Version=" + browser_version,
-                "OS=Windows 10",
-                "Environment=Production",
-                "Site=American Eagle",
-            ]
-        ),
+        "\n".join(environment_data) + "\n",
         encoding="utf-8",
     )
 

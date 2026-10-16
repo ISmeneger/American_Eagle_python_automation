@@ -1,28 +1,31 @@
+
 import os
 
 import pytest
-
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-
-from ui.pages.base_page import BasePage
 
 
 @pytest.fixture
 def driver(pytestconfig):
     options = Options()
 
+    # Disable geolocation and browser notifications.
     options.add_experimental_option(
         "prefs",
         {
             "profile.default_content_setting_values.geolocation": 2,
             "profile.default_content_setting_values.notifications": 2,
-        }
+        },
     )
 
+    # Do not wait for all page resources to finish loading.
     options.page_load_strategy = "eager"
 
-    if os.getenv("CI") == "true":
+    is_ci = os.getenv("CI", "").lower() == "true"
+
+    # Configure headless Chrome for GitHub Actions.
+    if is_ci:
         options.add_argument("--headless=new")
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--no-sandbox")
@@ -30,32 +33,24 @@ def driver(pytestconfig):
 
     driver = webdriver.Chrome(options=options)
 
-    if os.getenv("CI") != "true":
-        driver.maximize_window()
+    try:
+        # Maximize browser window during local UI testing.
+        if not is_ci:
+            driver.maximize_window()
 
-    setattr(
-        pytestconfig,
-        "browser_name",
-        driver.capabilities.get(
+        # Save browser information for Allure environment metadata.
+        pytestconfig.browser_name = driver.capabilities.get(
             "browserName",
             "Unknown",
-        ),
-    )
+        )
 
-    setattr(
-        pytestconfig,
-        "browser_version",
-        driver.capabilities.get(
+        pytestconfig.browser_version = driver.capabilities.get(
             "browserVersion",
             "Unknown",
-        ),
-    )
+        )
 
-    yield driver
+        yield driver
 
-    try:
-        BasePage(driver).close_popup_if_available()
-    except Exception:
-        pass
-
-    driver.quit()
+    finally:
+        # Always close the browser after the test.
+        driver.quit()

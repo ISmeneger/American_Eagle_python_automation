@@ -98,6 +98,34 @@ jobs:
           path: allure-results
           merge-multiple: true
 
+      - name: Set Allure environment
+        run: |
+          python - <<'PY'
+          import platform
+          from pathlib import Path
+
+          environment = Path("allure-results/environment.properties")
+          environment.parent.mkdir(parents=True, exist_ok=True)
+
+          data = [
+              "Project=American Eagle Python Automation",
+              "Environment=Production",
+              f"Language=Python {platform.python_version()}",
+              "Framework=Pytest",
+              "HTTP_Client=requests",
+              "UI_Automation=Selenium WebDriver",
+              "Browser=Google Chrome (UI job)",
+              f"Report_OS={platform.system()} {platform.release()}",
+              "CI=GitHub Actions",
+              "Site=American Eagle",
+          ]
+
+          environment.write_text(
+              "\n".join(data) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
       - name: Copy history
         if: always()
         uses: actions/checkout@v4
