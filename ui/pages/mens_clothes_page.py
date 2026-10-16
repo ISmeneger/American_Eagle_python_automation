@@ -76,18 +76,36 @@ class MensClothesPage(BasePage):
     )
 
     def move_to_men_menu(self):
-        men_menu = self.wait_for_visible(
-            self.MEN_MENU
-        )
+        max_attempts = 3
 
-        ActionChains(self.driver) \
-            .scroll_to_element(men_menu) \
-            .move_to_element(men_menu) \
-            .perform()
+        for attempt in range(max_attempts):
+            try:
+                self.close_blocking_overlays_if_available()
 
-        self.wait_for_visible(
-            self.VIEW_ALL_CATEGORIES
-        )
+                men_menu = self.wait_for_visible(
+                    self.MEN_MENU
+                )
+
+                ActionChains(self.driver) \
+                    .scroll_to_element(men_menu) \
+                    .move_to_element(men_menu) \
+                    .perform()
+
+                self.wait_for_visible(
+                    self.VIEW_ALL_CATEGORIES
+                )
+
+                return
+
+            except (
+                    ElementClickInterceptedException,
+                    StaleElementReferenceException,
+                    TimeoutException,
+            ):
+                if attempt == max_attempts - 1:
+                    raise
+
+                self.close_blocking_overlays_if_available()
 
     def click_view_all_categories(self):
         max_attempts = 3
@@ -186,7 +204,7 @@ class MensClothesPage(BasePage):
         )
 
         if sort_button.get_attribute("aria-expanded") != "true":
-            sort_button.click()
+            self.safe_click(self.SORT_BY_BUTTON)
 
         self.wait.until(
             EC.visibility_of_element_located(
@@ -287,7 +305,7 @@ class MensClothesPage(BasePage):
         )
 
         if price_filter_button.get_attribute("aria-expanded") != "true":
-            self.click(self.PRICE_FILTER_BUTTON)
+            self.safe_click(self.PRICE_FILTER_BUTTON)
 
         checkbox = self.wait_for_present(
             self.PRICE_25_TO_50_CHECKBOX
