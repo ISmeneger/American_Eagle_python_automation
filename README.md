@@ -1,868 +1,485 @@
 # American Eagle Python Automation
 
-## 🧪 UI & API Test Automation Project
+## Автоматизация UI- и REST API-тестирования на Python
 
-Автоматизированное тестирование реального e-commerce сайта [American Eagle](https://www.ae.com/us/en) с использованием **Python 3.12**, **Pytest**, **Selenium WebDriver**, **Requests**, **GitHub Actions** и **Allure Report**.
+Самостоятельный проект по автоматизации тестирования действующего интернет-магазина [American Eagle](https://www.ae.com/us/en). Реализованы UI- и API-тесты, архитектура Page Object Model, переиспользуемые шаги, фикстуры Pytest, отчётность Allure и непрерывная интеграция в GitHub Actions.
 
-[![Python](https://img.shields.io/badge/Python-3.12-%233776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-9.1.1-%230A9EDC?logo=pytest&logoColor=white)](https://pytest.org/)
-[![Selenium](https://img.shields.io/badge/Selenium-4.50.0-%2343B02A?logo=selenium&logoColor=white)](https://www.selenium.dev/)
-[![Requests](https://img.shields.io/badge/Requests-2.34.2-%232C5BB4)](https://requests.readthedocs.io/)
-[![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI-%232671E5?logo=githubactions)](https://github.com/features/actions)
-[![Allure](https://img.shields.io/badge/Allure-Report-%23FF6A00?logo=allure)](https://allurereport.org/)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-9.1.1-0A9EDC?logo=pytest&logoColor=white)](https://pytest.org/)
+[![Selenium](https://img.shields.io/badge/Selenium-4.50.0-43B02A?logo=selenium&logoColor=white)](https://www.selenium.dev/)
+[![Requests](https://img.shields.io/badge/Requests-2.34.2-2C5BB4)](https://requests.readthedocs.io/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI-2671E5?logo=githubactions)](https://github.com/features/actions)
+[![Allure](https://img.shields.io/badge/Allure-Report-FF6A00?logo=allure)](https://allurereport.org/)
 
-### 📊 Allure Report
+**[Актуальный Allure Report](https://ismeneger.github.io/American_Eagle_python_automation/)** · **[GitHub Actions](https://github.com/ISmeneger/American_Eagle_python_automation/actions)** · **[Тест-план (PDF)](docs/American_Eagle_Python_TestPlan_2026.pdf)**
 
-После успешного CI-запуска актуальный отчёт публикуется через GitHub Pages по постоянной ссылке:
+### Последний подтверждённый полный CI-запуск
 
-➡️ **[Open Allure Report](https://ismeneger.github.io/American_Eagle_python_automation/)**
+**16 октября 2026 года**, коммит [`3e29339`](https://github.com/ISmeneger/American_Eagle_python_automation/commit/3e29339), workflow **API and UI Automation #21** (успешный повторный запуск задачи формирования отчёта).
 
-### ✅ Текущее состояние набора тестов
+| Результат | Количество |
+|---|---:|
+| Всего сценариев | **52** |
+| Успешно (`passed`) | **47** |
+| Пропущено (`skipped`) | **4** |
+| Ожидаемая ошибка (`xfailed`) | **1** |
+| Неожиданные ошибки (`failed`) | **0** |
 
-- **50 тестовых сценариев** в текущем наборе;
-- **16 API тестов** — 16 passed;
-- **33 UI теста** — 28 passed, 4 skipped, 1 xfailed;
-- **1 smoke test** конфигурации проекта — passed;
-- последний полный локальный прогон: **45 passed, 4 skipped, 1 xfailed, 0 failed**;
-- текущий CI-прогон также включает все **50 test cases** в едином Allure Report;
-- `skip` используется для сценариев, которые блокируются anti-bot-защитой сайта;
-- `xfail` используется для известного дефекта поиска;
-- API + project smoke и UI запускаются в отдельных jobs GitHub Actions;
-- результаты объединяются в единый Allure Report.
+Покрытие: **16 API-тестов**, **35 UI-тестов** и **1 smoke-тест** конфигурации. Jobs `api-tests` и `ui-tests` завершились успешно; `allure-report` успешно сформировал отчёт после повторного запуска; публикация через GitHub Pages также выполнена. **Показатель 100% в Allure означает отсутствие неожиданных ошибок, а не то, что все 52 сценария получили статус `passed`.**
 
----
-
-<a id="contents"></a>
-## 📚 Содержание
-
-- [📌 О проекте](#project)
-- [🎯 Почему я сделал Python-версию](#motivation)
-- [🛍 Об объекте тестирования](#system-under-test)
-- [🧰 Технологический стек](#tech-stack)
-- [🏗 Архитектура проекта](#architecture)
-- [✅ Покрытие](#coverage)
-- [⚠️ Ограничения и anti-bot protection](#limitations)
-- [📝 Тест-план](#test-plan)
-- [🏷 Pytest markers](#markers)
-- [🚀 Локальный запуск](#local-run)
-- [🔐 Credentials](#credentials)
-- [⚙️ GitHub Actions](#github-actions)
-- [📊 Allure Report](#allure)
-- [📦 Allure artifacts](#artifacts)
-- [🧪 API lifecycle сценарий](#api-e2e)
-- [📁 Структура проекта](#project-structure)
-- [📈 CI/CD результат](#cicd-result)
-- [👤 Автор](#author)
+> **Важно при повторном запуске:** American Eagle — внешний динамически изменяющийся production-сайт. Успешное выполнение набора на указанную дату **не гарантирует идентичный результат при последующих локальных или CI-запусках**. Подробнее — в разделе [«Стабильность тестов и известные ограничения»](#stability).
 
 ---
 
-<a id="project"></a>
-## 📌 О проекте
+## Содержание
 
-Этот репозиторий содержит **автоматизированные UI и REST API тесты** для сайта [American Eagle](https://www.ae.com/).
-
-Проект создан мной **самостоятельно, по собственной инициативе**, уже вне рамок учебной программы и выпускной работы.
-
-Ранее я прошёл курс **«Тестировщик ПО» в Университете ИТМО**, где изучал ручное и автоматизированное тестирование на **Python**. Позже в рамках отдельного курса по Java AQA я разработал Java-версию автоматизации American Eagle как выпускной проект.
-
-После завершения обучения я решил самостоятельно реализовать аналогичный полноценный проект на **Python**, чтобы:
-
-- закрепить и расширить практические навыки Python;
-- показать, что могу строить AQA-проект не только на Java;
-- самостоятельно перенести и переосмыслить архитектуру тестового фреймворка;
-- расширить портфолио вторым языком программирования;
-- отработать реальные задачи Automation QA на production-сайте;
-- самостоятельно настроить API/UI automation, CI и Allure-отчётность.
-
-Python-версия не является учебным заданием или обязательной частью курса. Это отдельный pet project, который я развиваю самостоятельно как продолжение профессионального развития в Automation QA.
-
-Основные цели проекта:
-
-- автоматизация пользовательских UI-сценариев;
-- автоматизация REST API тестирования;
-- позитивные и негативные проверки;
-- работа с динамическими тестовыми данными;
-- разделение UI и API уровней;
-- использование Page Object Model и reusable Steps;
-- работа с нестабильным динамическим DOM;
-- автоматический запуск тестов в GitHub Actions;
-- раздельный запуск API и UI наборов;
-- формирование единого Allure Report;
-- публикация отчётности через GitHub Pages.
-
-[⬆️ К содержанию](#contents)
+- [О проекте](#about)
+- [Почему создана Python-версия](#motivation)
+- [Объект тестирования](#system)
+- [Технологический стек](#stack)
+- [Архитектура](#architecture)
+- [Тестовое покрытие](#coverage)
+- [Стабильность тестов и известные ограничения](#stability)
+- [Ограничения anti-bot, пропуски и ожидаемый дефект](#limitations)
+- [Тест-план](#test-plan)
+- [Маркеры Pytest](#markers)
+- [Локальный запуск](#local)
+- [Доступ к API и секреты](#credentials)
+- [GitHub Actions и CI/CD](#ci)
+- [Allure Report](#allure)
+- [Артефакты CI](#artifacts)
+- [Пример API-сценария](#api-lifecycle)
+- [Структура проекта](#structure)
+- [Результаты и статус проекта](#status)
+- [Автор](#author)
 
 ---
+
+<a id="about"></a>
+## О проекте
+
+Этот репозиторий содержит автоматизированные **UI- и REST API-тесты** действующего интернет-магазина American Eagle. Проект разработан **самостоятельно, по собственной инициативе, вне рамок учебной программы** и предназначен для демонстрации практических навыков QA Automation.
+
+Основные направления работы:
+
+- разработка позитивных, негативных и сквозных сценариев;
+- автоматизация Web UI с использованием Selenium WebDriver;
+- тестирование REST API и работа с токенами авторизации;
+- динамический выбор товаров, SKU и тестовых данных;
+- Page Object Model, компонентный подход и переиспользуемый слой Steps;
+- управление тестовым состоянием и фикстурами Pytest;
+- работа с асинхронной загрузкой, изменениями DOM и всплывающими окнами;
+- раздельное выполнение API и UI в GitHub Actions;
+- создание и публикация общего отчёта Allure Report через GitHub Pages.
+
+[К содержанию](#содержание)
 
 <a id="motivation"></a>
-## 🎯 Почему я сделал Python-версию
+## Почему создана Python-версия
 
-У меня уже был рабочий Java AQA проект для American Eagle, поэтому я сознательно выбрал тот же реальный объект тестирования для Python-версии.
+Ранее я прошёл обучение тестированию ПО в Университете ИТМО (ручное тестирование и автоматизация на Python). Позднее, в рамках отдельного курса по Java QA Automation, я создал [проект автоматизации American Eagle на Java](https://github.com/ISmeneger/American_Eagle_java_automation) как выпускную работу.
 
-Это позволило сосредоточиться не на придумывании нового учебного кейса, а на сравнении подходов и самостоятельной реализации тех же Automation QA задач на другом стеке.
+Затем самостоятельно реализовал Python-версию для того же объекта тестирования. Это позволило сравнить подходы на двух языках, заново организовать архитектуру, разработать API-клиенты и UI-автотесты, настроить GitHub Actions и единую отчётность Allure.
 
-В Python-проекте я самостоятельно:
+**Python-репозиторий — самостоятельный pet project, а не обязательное учебное задание.**
 
-- настроил структуру проекта с нуля;
-- организовал виртуальное окружение и зависимости;
-- реализовал API-клиенты на `requests`;
-- реализовал UI-автоматизацию на Selenium WebDriver;
-- построил Page Object и Steps слои;
-- добавил pytest fixtures;
-- реализовал positive / negative / smoke / defect сценарии;
-- добавил Allure annotations и результаты;
-- настроил headless Chrome для CI;
-- настроил GitHub Actions;
-- разделил API и UI jobs;
-- добавил GitHub Secrets для API credential;
-- реализовал публикацию объединённого Allure Report;
-- стабилизировал тесты для работы с динамическим DOM, marketing/regional popup-окнами, `StaleElementReferenceException` и `ElementClickInterceptedException`.
+[К содержанию](#содержание)
 
-Для меня этот проект — демонстрация того, что знания Python из курса ИТМО я могу применять самостоятельно в полноценном AQA-проекте, а не только в рамках учебных упражнений.
+<a id="system"></a>
+## Объект тестирования
 
-[⬆️ К содержанию](#contents)
+**[American Eagle Outfitters](https://www.ae.com/)** — действующий интернет-магазин одежды и аксессуаров. В рамках проекта исследуются каталог и карточки товаров, поиск, регистрационные и авторизационные формы, корзина, а также REST API авторизации, каталога, остатков и корзины.
 
----
+Сайт находится вне моего контроля. Контент, структура интерфейса, цены, товары, рекламные кампании и региональные настройки могут изменяться независимо от тестового проекта.
 
-<a id="system-under-test"></a>
-## 🛍 Об объекте тестирования
+[К содержанию](#содержание)
 
-**American Eagle Outfitters, Inc. (American Eagle)** — крупная американская розничная компания по продаже одежды и аксессуаров.
-
-Для автоматизации используется реальный действующий интернет-магазин:
-
-➡️ [https://www.ae.com/](https://www.ae.com/)
-
-С точки зрения автоматизации тестирования это интересный e-commerce продукт, который включает:
-
-- большой каталог товаров и категорий;
-- поиск товаров;
-- карточки товаров с разными SKU;
-- регистрацию и авторизацию;
-- пользовательские сессии;
-- корзину и изменение её состояния;
-- REST API;
-- динамический контент;
-- всплывающие маркетинговые окна;
-- sale / regular prices;
-- динамическое обновление DOM;
-- anti-bot protection;
-- различия поведения сайта при локальном и CI-запуске.
-
-Работа с production-сайтом позволяет решать реальные Automation QA задачи: синхронизацию, динамические данные, нестабильность внешнего окружения, повторное получение элементов после изменения DOM, работу с токенами, состоянием корзины и CI/CD.
-
-[⬆️ К содержанию](#contents)
-
----
-
-<a id="tech-stack"></a>
-## 🧰 Технологический стек
+<a id="stack"></a>
+## Технологический стек
 
 | Технология | Назначение |
 |---|---|
-| **Python 3.12** | Основной язык проекта |
-| **Pytest 9.1.1** | Тестовый фреймворк |
-| **Selenium WebDriver 4.50.0** | UI-автоматизация |
-| **Requests 2.34.2** | REST API тестирование |
-| **Allure Pytest 2.16.2** | Интеграция Pytest с Allure |
-| **Decimal** | Точная работа с ценами |
-| **Git / GitHub** | Контроль версий |
-| **GitHub Actions** | CI |
-| **GitHub Pages** | Публикация Allure Report |
-| **Chrome / Selenium Manager** | Запуск UI-тестов |
-| **PyCharm** | Среда разработки |
+| Python 3.12 | Основной язык |
+| Pytest 9.1.1 | Запуск тестов, фикстуры, маркеры, параметризация |
+| Selenium WebDriver 4.50.0 | Автоматизация браузера |
+| Requests 2.34.2 | HTTP-запросы к REST API |
+| Allure Pytest 2.16.2 | Отчётность и вложения |
+| `decimal.Decimal` | Точные проверки цен и сумм |
+| Git / GitHub | Контроль версий |
+| GitHub Actions | Автоматическое выполнение тестов |
+| GitHub Pages | Публикация истории Allure |
+| Google Chrome / Selenium Manager | Браузер и управление WebDriver |
+| PyCharm | Локальная разработка |
 
-[⬆️ К содержанию](#contents)
+Версии основных Python-зависимостей зафиксированы в [`requirements.txt`](requirements.txt).
 
----
+[К содержанию](#содержание)
 
 <a id="architecture"></a>
-## 🏗 Архитектура проекта
+## Архитектура проекта
 
-В проекте используются:
-
-- **Page Object Model** для UI-тестов;
-- отдельные `Page` и `Component` классы;
-- отдельный `Steps` слой для пользовательских бизнес-сценариев;
-- API clients;
-- pytest fixtures;
-- общие constants / config;
-- helper / utils слой;
-- Allure annotations;
-- pytest markers для группировки;
-- отдельные UI и API test packages.
-
-### Разделение ответственности
-
-**Page Objects**
-
-Содержат локаторы и прямые действия со страницей.
-
-**Steps**
-
-Содержат переиспользуемые последовательности пользовательских действий.
-
-**Tests**
-
-Содержат тестовые сценарии, assertions и бизнес-проверки.
-
-Пример:
+Разделение по ответственности:
 
 ```text
-Test
-  ↓
-Steps
-  ↓
-Page Object
-  ↓
-Selenium WebDriver
+Тесты Pytest (сценарии и проверки)
+              │
+              ▼
+       Steps (бизнес-шаги)
+              │
+              ▼
+Page Objects / UI Components
+              │
+              ▼
+       Selenium WebDriver
+
+API-тесты ──► API Clients ──► Requests ──► REST API
 ```
 
-Такое разделение уменьшает дублирование и делает тесты читаемее.
+- **Tests** содержат сценарии, assertions и шаги Allure.
+- **Steps** объединяют повторяющиеся пользовательские действия, например выбор товара и добавление в корзину.
+- **Page Objects** содержат локаторы и операции со страницами.
+- **UI Components** инкапсулируют повторяющиеся части интерфейса.
+- **API Clients** формируют запросы к методам авторизации, каталога, остатков и корзины.
+- **Fixtures** управляют браузером, HTTP-сессиями, клиентами и состоянием API-корзины.
+- **Config / Constants / Utils** хранят конфигурацию, константы и общие вспомогательные функции.
 
-Основные категории тестов:
+### Работа с динамическим UI
 
-- `ui`
-- `api`
-- `smoke`
-- `positive`
-- `negative`
-- `defect`
-- `auth`
-- `browse`
-- `inventory`
-- `bag`
-- `account`
-- `home_page`
+В `ui/pages/base_page.py` реализованы общие механизмы:
 
-[⬆️ К содержанию](#contents)
+- явные ожидания доступности элементов;
+- `safe_click()` с ограниченным числом повторных попыток при `ElementClickInterceptedException` и `StaleElementReferenceException`;
+- закрытие рекламных окон **Bloomreach** двух известных типов (разные классы кнопок закрытия), включая работу с открытым Shadow DOM;
+- обработка cookie-баннера и диалога выбора региона/страны доставки;
+- повторный поиск элементов после изменений DOM.
 
----
+Эти механизмы уменьшают количество ложных падений, **но не исключают риски дальнейших изменений стороннего сайта**.
+
+[К содержанию](#содержание)
 
 <a id="coverage"></a>
-## ✅ Покрытие
+## Тестовое покрытие
 
-### UI
+### UI — 35 сценариев
 
-В UI-части проекта проверяются:
+Проверяются:
 
-- открытие главной страницы;
-- header;
-- footer;
-- account panel;
-- shopping bag;
-- favorites;
-- поиск существующего товара;
-- negative search scenario;
-- регистрационная форма;
-- валидация email;
-- обязательные поля регистрации;
-- sign-in validation;
-- Men's Clothes каталог;
-- переход в каталог;
-- сортировка `Price: Low to High`;
-- фильтрация по диапазону `$25 - $50`;
-- открытие товара;
-- выбор доступного размера;
-- добавление товара в корзину;
-- проверка сообщения `Added to bag!`;
-- соответствие цены Product Page и Shopping Bag;
-- поддержка sale и regular price;
-- соответствие выбранного размера;
-- изменение количества товара;
-- проверка subtotal;
-- free shipping threshold;
-- максимальное количество товара;
+- открытие главной страницы, шапка и подвал сайта;
+- пользовательские элементы, включая панель аккаунта и избранное;
+- поиск существующих и несуществующих товаров;
+- форма регистрации, обязательные поля и проверка формата email;
+- негативные сценарии входа;
+- переход в каталог Men's Clothes;
+- сортировка товаров `Price: Low to High`;
+- фильтрация по диапазону `$25–$50` и сочетание фильтрации с сортировкой;
+- открытие карточки товара и выбор доступного размера;
+- добавление товара в корзину и проверка уведомления `Added to bag!`;
+- сопоставление цены и выбранного размера в карточке товара и корзине;
+- изменение количества товара, проверка суммы и условия бесплатной доставки;
+- максимальное разрешённое количество товара;
 - удаление товара;
-- добавление двух разных товаров в корзину;
-- проверка нескольких товаров, их размера и цены.
+- добавление двух разных товаров и удаление одного из них.
 
-### API
+### API — 16 сценариев
 
-API-набор включает:
+Проверяются:
 
-- получение guest token;
-- проверку `access_token`;
-- негативные проверки guest authorization;
-- Browse API;
-- получение товаров категории;
-- получение динамического `productId`;
-- несуществующую категорию;
-- Browse без авторизации;
-- Inventory API;
-- получение доступного товара и SKU;
-- invalid product;
-- Inventory без авторизации;
-- Bag API;
-- полный lifecycle товара в корзине;
-- добавление нескольких разных товаров;
-- добавление без авторизации;
-- invalid SKU;
-- удаление несуществующего item;
-- update с нулевым quantity.
+- получение гостевого токена и наличие `access_token`;
+- негативные случаи авторизации;
+- Browse API: категория, динамический `productId`, неизвестная категория, отсутствие авторизации;
+- Inventory API: доступный товар и SKU, неизвестный товар, отсутствие авторизации;
+- Bag API: жизненный цикл товара, добавление и обновление, несколько разных товаров;
+- негативные сценарии: отсутствие авторизации, неверный SKU, удаление отсутствующего товара, недопустимое количество.
 
-Тесты по возможности используют динамические данные, чтобы уменьшить зависимость от одного захардкоженного товара или SKU.
+Тестовые данные по возможности формируются динамически, а не привязываются к одному фиксированному товару. Дополнительно выполняется **1 smoke-тест конфигурации проекта**.
 
-[⬆️ К содержанию](#contents)
+[К содержанию](#содержание)
 
----
+<a id="stability"></a>
+## Стабильность тестов и известные ограничения
+
+**American Eagle — действующий коммерческий сайт, который постоянно развивается и изменяется его разработчиками.** Интерфейс, рекламные баннеры, всплывающие окна, ассортимент, цены, размеры товаров и структура DOM могут меняться без уведомления авторов сторонних автотестов. Эти изменения способны повлиять на результаты проверок даже при корректной логике самих тестов.
+
+**Это необходимо учитывать при каждом повторном запуске — как локально, так и в GitHub Actions (CI).** Зелёный CI, зафиксированный на конкретную дату, подтверждает работоспособность набора **на момент выполнения**, но не гарантирует неизменный результат на будущих версиях сайта.
+
+### Основные факторы нестабильности
+
+- Динамические элементы интерфейса, асинхронная загрузка и перерисовка DOM.
+- Маркетинговые popup-окна, в том числе повторно появляющиеся **Bloomreach overlays**; типы рекламных кампаний и разметка их кнопок закрытия могут изменяться.
+- Cookie-баннеры и окна выбора страны или региона доставки.
+- Изменения доступности товаров, цен, скидок, размеров и остатков.
+- Anti-bot-защита, региональные ограничения и различия поведения сайта при локальном запуске и на CI runner.
+- Возможные `ElementClickInterceptedException`, `StaleElementReferenceException` и `TimeoutException`.
+- Временная недоступность сайта, отдельных страниц или API и влияние внешних сетевых условий.
+
+### Как обеспечивается устойчивость
+
+В проекте используются явные ожидания Selenium, централизованная обработка известных перекрывающих окон, ограниченные повторные попытки взаимодействия, повторное получение элементов после изменения DOM и динамический выбор доступных товаров. Это позволяет уменьшить количество нестабильных прогонов, однако **полностью устранить зависимость от внешнего production-сайта невозможно**.
+
+Если при повторном прогоне локально или на CI появляется ошибка, следует сначала проверить актуальность интерфейса, локаторов, доступность товаров, географические ограничения, рекламные окна и состояние сайта. Сам по себе красный запуск не доказывает наличие дефекта в тестовом фреймворке.
+
+### Политика сопровождения проекта
+
+**Репозиторий — демонстрационный образовательный проект и часть портфолио QA Automation Engineer, а не сервис непрерывного промышленного тестирования.**
+
+Автотесты демонстрируют практические навыки UI- и API-тестирования, Page Object Model, работы с фикстурами, проверками, отчётностью и CI/CD. Набор протестирован на реальном сайте во время последнего подтверждённого успешного запуска.
+
+В дальнейшем изменения сайта могут потребовать обновления локаторов, тестовых данных, ожиданий или вспомогательной логики. **Поддержка осуществляется по мере необходимости (best effort); постоянная совместимость со всеми будущими изменениями American Eagle не гарантируется.** Отсутствие регулярных коммитов в этот репозиторий само по себе не означает, что проект не был завершён или не прошёл проверки на зафиксированную дату.
+
+[К содержанию](#содержание)
 
 <a id="limitations"></a>
-## ⚠️ Ограничения реального сайта и anti-bot protection
+## Ограничения anti-bot, пропуски и ожидаемый дефект
 
-Тесты выполняются на **реальном production-сайте American Eagle**, который использует anti-bot protection.
+### Регистрация и авторизация
 
-Из-за этого отдельные сценарии технически невозможно стабильно выполнять автоматически.
+Сайт применяет защиту от автоматизированных действий. Заполнение регистрационной формы автоматизировано, но отправка может завершаться ответом `Access Denied`. Аналогичное ограничение влияет на успешный автоматизированный вход и отдельные проверки пароля.
 
-### Регистрация
+Поэтому сценарии, которые нельзя надёжно выполнять в текущем окружении, отмечены **`@pytest.mark.skip`** с объяснением причины. Проверки формата и обязательности отдельных полей остаются в активном наборе там, где их можно выполнять. Дополнительные сценарии валидации пароля описаны в тест-плане, но не дублируются искусственными пропусками в отчёте.
 
-Заполнение формы регистрации автоматизировано, однако финальная отправка может приводить к `Access Denied`.
+### Ожидаемый дефект поиска
 
-Поэтому тест успешного создания аккаунта намеренно помечен:
+При бессмысленном поисковом запросе сайт может возвращать товары или рекомендации. Сценарий задокументирован с помощью **`@pytest.mark.xfail`** — это ожидаемое несоответствие, а не скрытая ошибка CI.
 
-```python
-@pytest.mark.skip(
-    reason=(
-        "Automated account creation is blocked by the site's anti-bot "
-        "protection. Registration form filling works, but submission "
-        "results in Access Denied."
-    )
-)
-```
+**`skipped` и `xfailed` — отдельные статусы, отличные от `passed`.** Они показаны в Allure и учитываются при интерпретации результатов.
 
-### Авторизация
-
-Успешный sign-in вручную работает, но автоматизированный вход блокируется anti-bot protection.
-
-В активном автоматическом наборе оставлены:
-
-- негативные проверки `invalid email` и `empty email`;
-- `successful sign-in` как документированный `skip`;
-- один representative password-сценарий (`invalid password`) как документированный `skip`.
-
-Дополнительно предусмотрены сценарии:
-
-- `empty password`;
-- `short password`;
-- `long password`.
-
-Они не дублируются отдельными `skip`-тестами в активном наборе, потому что из-за anti-bot невозможно стабильно перейти к серверной password validation. Эти проверки остаются частью тестового покрытия и зафиксированы в Test Plan.
-
-Такой подход позволяет не раздувать Allure Report несколькими одинаково недоступными сценариями и при этом явно документировать предусмотренную QA-логику.
-
-### Известный defect поиска
-
-American Eagle возвращает товары / рекомендации даже для бессмысленного несуществующего запроса.
-
-Сценарий сохранён в проекте как известный дефект и отмечен:
-
-```python
-@pytest.mark.xfail(
-    reason=(
-        "Known defect: search returns products "
-        "for non-existing queries"
-    )
-)
-```
-
-### Нестабильность production-сайта
-
-Поскольку сайт внешний и production, иногда возможны:
-
-- медленная загрузка;
-- временная недоступность страницы;
-- повторное появление marketing popup;
-- региональный popup выбора страны доставки;
-- перекрытие интерактивных элементов popup overlays;
-- перерисовка DOM;
-- `StaleElementReferenceException`;
-- `ElementClickInterceptedException`;
-- изменение доступных товаров и скидок.
-
-Для таких случаев в проекте используются explicit waits, централизованное закрытие blocking overlays, повторное получение элементов после изменения DOM, fallback-навигация и ограниченная retry-логика там, где это оправдано.
-
-[⬆️ К содержанию](#contents)
-
----
+[К содержанию](#содержание)
 
 <a id="test-plan"></a>
-## 📝 Тест-план
+## Тест-план
 
-Для проекта подготовлен отдельный **Automation Test Plan**, адаптированный под Python-версию проекта.
+Подготовлен отдельный тест-план, в котором описаны цели, границы автоматизации, тестовые данные, UI- и API-покрытие, архитектура, стратегия CI/CD, Allure, известные ограничения и критерии завершения.
 
-В документе описаны:
+**[Открыть тест-план American Eagle Python (PDF)](docs/American_Eagle_Python_TestPlan_2026.pdf)**
 
-- цели автоматизации;
-- UI и REST API scope;
-- out of scope;
-- типы и категории тестов;
-- тестовые данные и управление состоянием;
-- технологический стек;
-- архитектура автоматизации;
-- локальное и CI-окружение;
-- CI/CD стратегия;
-- Allure Reporting;
-- anti-bot ограничения;
-- password validation scenarios, которые предусмотрены, но не дублируются в активном наборе из-за anti-bot;
-- известный `xfail` сценарий поиска;
-- риски и меры снижения;
-- критерии успешного завершения.
-
-📄 **[Открыть American Eagle Python Test Plan (PDF)](docs/American_Eagle_Python_TestPlan_2026.pdf)**
-
-[⬆️ К содержанию](#contents)
-
----
+[К содержанию](#содержание)
 
 <a id="markers"></a>
-## 🏷 Pytest markers
+## Маркеры Pytest
 
-В `pytest.ini` зарегистрированы markers для гибкого запуска наборов тестов.
+В [`pytest.ini`](pytest.ini) определены маркеры `ui`, `api`, `account`, `home_page`, `auth`, `browse`, `inventory`, `bag`, `smoke`, `positive`, `negative`, `defect`.
 
-Основные:
-
-```text
-ui
-api
-account
-home_page
-auth
-browse
-inventory
-bag
-smoke
-positive
-negative
-defect
-```
-
-Пример запуска:
+Примеры:
 
 ```powershell
-pytest -m api -v
+python -m pytest -m api -v
+python -m pytest -m "ui and positive" -v
+python -m pytest -m smoke -v
 ```
 
-или:
+[К содержанию](#содержание)
 
-```powershell
-pytest -m "ui and positive" -v
-```
+<a id="local"></a>
+## Локальный запуск
 
-[⬆️ К содержанию](#contents)
+Инструкции ниже приведены для **Windows / PowerShell** и Python 3.12. Для UI-тестов требуется установленный Google Chrome.
 
----
-
-<a id="local-run"></a>
-## 🚀 Локальный запуск
-
-### Клонирование проекта
+### 1. Клонирование репозитория
 
 ```powershell
 git clone https://github.com/ISmeneger/American_Eagle_python_automation.git
 cd American_Eagle_python_automation
 ```
 
-### Создание виртуального окружения
+### 2. Виртуальное окружение и зависимости
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-```
-
-### Установка зависимостей
-
-```powershell
 python -m pip install --upgrade pip
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-### Все тесты
+### 3. Запуск
 
 ```powershell
-pytest -v
+# Только UI
+python -m pytest tests/ui -v
+
+# Только API (при наличии нужного credential)
+python -m pytest tests/api -v
+
+# Каталог Men's Clothes и корзина
+python -m pytest tests/ui/mens_clothes -v
+
+# Один конкретный тест
+python -m pytest tests/ui/mens_clothes/test_product_cart.py::test_product_price_matches_cart_price -v
+
+# Полный набор
+python -m pytest -v
 ```
 
-### API
+Для формирования файлов Allure добавьте `--alluredir=allure-results` к команде Pytest. Локальный запуск полного набора зависит от текущего состояния стороннего сайта, настроек региона и доступности API credential.
 
-Перед запуском API-тестов необходимо передать guest credential:
-
-```powershell
-$env:AE_GUEST_AUTH="Basic <guest-api-credential>"
-pytest tests\api -v
-```
-
-> Реальное значение `AE_GUEST_AUTH` не должно храниться в репозитории.
-
-### UI
-
-```powershell
-pytest tests\ui -v
-```
-
-### Men's Clothes
-
-```powershell
-pytest tests\ui\mens_clothes -v
-```
-
-### Конкретный тест
-
-```powershell
-pytest tests\ui\mens_clothes\test_product_cart.py::test_product_price_matches_cart_price -v
-```
-
-### По marker
-
-```powershell
-pytest -m smoke -v
-pytest -m positive -v
-pytest -m negative -v
-pytest -m defect -v
-```
-
-[⬆️ К содержанию](#contents)
-
----
+[К содержанию](#содержание)
 
 <a id="credentials"></a>
-## 🔐 Credentials
+## Доступ к API и секреты
 
-Секретные значения не хранятся в репозитории.
+В репозитории **не хранятся секретные значения**. Для получения гостевого токена API используется переменная окружения `AE_GUEST_AUTH`.
 
-Для API используется:
-
-- `AE_GUEST_AUTH` — credential для получения guest access token.
-
-Локально значение передаётся через environment variable:
+Пример для PowerShell:
 
 ```powershell
-$env:AE_GUEST_AUTH="Basic <guest-api-credential>"
+$env:AE_GUEST_AUTH = "Basic <guest-api-credential>"
+python -m pytest tests/api -v
 ```
 
-В GitHub Actions используется **GitHub Repository Secret**:
+Здесь `<guest-api-credential>` — условное обозначение, а не действующее значение. В GitHub Actions применяется одноимённый **Repository Secret**, доступный workflow через `${{ secrets.AE_GUEST_AUTH }}`.
 
-```text
-AE_GUEST_AUTH
-```
+[К содержанию](#содержание)
 
-Workflow получает значение так:
+<a id="ci"></a>
+## GitHub Actions и CI/CD
 
-```yaml
-env:
-  AE_GUEST_AUTH: ${{ secrets.AE_GUEST_AUTH }}
-```
-
-Это позволяет запускать API-тесты в CI без публикации credential в Git-истории.
-
-[⬆️ К содержанию](#contents)
-
----
-
-<a id="github-actions"></a>
-## ⚙️ GitHub Actions
-
-Workflow находится в:
-
-```text
-.github/workflows/tests.yml
-```
-
-Он разделён на независимые jobs:
+Конфигурация: [`.github/workflows/tests.yml`](.github/workflows/tests.yml).
 
 ```text
 api-tests (API + smoke) ──► api-allure-results ──┐
-                                                 ├──► allure-report ──► GitHub Pages
+                                                 ├──► allure-report ──► gh-pages
 ui-tests ───────────────► ui-allure-results ─────┘
 ```
 
-### `api-tests`
+- **`api-tests`**: установка Python 3.12 и зависимостей, получение `AE_GUEST_AUTH` из GitHub Secrets, запуск `tests/api` и `tests/test_smoke.py`.
+- **`ui-tests`**: запуск `tests/ui` в Chrome headless на GitHub-hosted runner.
+- **`allure-report`**: получение и объединение артефактов, формирование единых сведений об окружении CI, восстановление истории Allure, сборка отчёта и публикация в ветку `gh-pages`.
 
-- checkout репозитория;
-- установка Python 3.12;
-- установка зависимостей;
-- получение `AE_GUEST_AUTH` из GitHub Secrets;
-- запуск:
+Запуск выполняется при `push` и `pull_request` в `main`, а также вручную через `workflow_dispatch`.
 
 ```bash
+# API и smoke (в job api-tests)
 pytest tests/api tests/test_smoke.py -v --alluredir=allure-results
-```
 
-- запуск **16 API тестов + 1 project smoke test**;
-- сохранение `allure-results` как artifact `api-allure-results`.
-
-### `ui-tests`
-
-- checkout репозитория;
-- установка Python 3.12;
-- установка зависимостей;
-- запуск UI-тестов:
-
-```bash
+# UI (в job ui-tests)
 pytest tests/ui -v --alluredir=allure-results
 ```
 
-- Chrome автоматически запускается в headless-режиме при `CI=true`;
-- сохраняется artifact `ui-allure-results`.
+**Особенность инфраструктуры:** job сборки отчёта использует сторонний GitHub Action и может временно завершиться ошибкой загрузки Docker-образа или внешнего реестра. Такой сбой следует отличать от падения тестов. В последнем запуске тестовые jobs были успешны, а `allure-report` успешно завершился при повторном запуске.
 
-### `allure-report`
-
-После завершения API + smoke и UI jobs:
-
-1. скачиваются Allure results из job `api-tests` (API + smoke);
-2. скачиваются UI Allure results;
-3. результаты всех **50 test cases** объединяются;
-4. восстанавливается история предыдущих Allure запусков;
-5. формируется единый Allure Report;
-6. отчёт публикуется в ветку `gh-pages`;
-7. GitHub Pages предоставляет постоянную ссылку на отчёт.
-
-### ▶️ Запуск workflow
-
-Workflow запускается:
-
-- при `push` в `main`;
-- при `pull_request` в `main`;
-- вручную через `workflow_dispatch`.
-
-Ожидаемая схема выполнения:
-
-```text
-api-tests (API + smoke) ✅
-ui-tests                 ✅
-          ↓
-allure-report             ✅
-```
-
-[⬆️ К содержанию](#contents)
-
----
+[К содержанию](#содержание)
 
 <a id="allure"></a>
-## 📊 Allure Report
+## Allure Report
 
-Job `api-tests` сохраняет результаты API + project smoke, а `ui-tests` — результаты UI. После этого CI объединяет их в единый Allure Report на **50 test cases**.
+**[Открыть опубликованный Allure Report](https://ismeneger.github.io/American_Eagle_python_automation/)**
 
-После включения GitHub Pages актуальный отчёт доступен по ссылке:
+Общий отчёт содержит результаты всех **52 сценариев**, группировку по наборам, шаги выполнения, сведения об окружении, ошибки и вложения со скриншотами и URL при падении UI-тестов. Сохраняется история предыдущих CI-запусков.
 
-➡️ **[Open Allure Report](https://ismeneger.github.io/American_Eagle_python_automation/)**
-
-В отчёте можно посмотреть:
-
-- общий результат запуска;
-- API, UI и project smoke suites;
-- отдельные test cases;
-- feature / story / title;
-- шаги выполнения;
-- ошибки и stack traces;
-- screenshots и URL для упавших UI-тестов;
-- browser / environment information;
-- историю запусков.
-
-Локально отчёт можно открыть командой:
+Для локального формирования отчёта нужен установленный **Allure Commandline** (не входит в `requirements.txt`):
 
 ```powershell
+python -m pytest tests/ui --alluredir=allure-results
 allure serve allure-results
 ```
 
-или сформировать статический вариант:
+Альтернативно:
 
 ```powershell
 allure generate allure-results --clean -o allure-report
 allure open allure-report
 ```
 
-[⬆️ К содержанию](#contents)
+Выполнение `pytest` без ключа `--alluredir` не создаёт результаты для нового отчёта.
 
----
+[К содержанию](#содержание)
 
 <a id="artifacts"></a>
-## 📦 Allure artifacts
+## Артефакты CI
 
-Каждый запуск GitHub Actions отдельно сохраняет:
+Каждый запуск workflow сохраняет два набора файлов:
 
-- `api-allure-results` — результаты **16 API + 1 smoke**;
-- `ui-allure-results` — результаты **33 UI**.
+- **`api-allure-results`** — результаты **16 API-тестов и 1 smoke-теста**;
+- **`ui-allure-results`** — результаты **35 UI-тестов**.
 
-Затем оба artifacts объединяются на отдельном CI-этапе в общий Allure Report на **50 test cases**.
+В задаче `allure-report` эти наборы объединяются в один отчёт. Общие сведения об окружении создаются после объединения, чтобы файлы `environment.properties` от независимых jobs не конфликтовали.
 
-[⬆️ К содержанию](#contents)
+[К содержанию](#содержание)
 
----
-
-<a id="api-e2e"></a>
-## 🧪 Пример API lifecycle сценария
-
-Один из основных API-сценариев проверяет полный lifecycle товара в корзине:
+<a id="api-lifecycle"></a>
+## Пример API-сценария: жизненный цикл товара в корзине
 
 ```text
-получение guest token
-        ↓
-получение динамического productId
-        ↓
-получение доступного SKU через Inventory
-        ↓
-добавление товара в Bag
-        ↓
-проверка состояния Bag
-        ↓
-изменение quantity
-        ↓
-проверка обновлённого состояния
-        ↓
-удаление товара
-        ↓
-проверка удаления
+Получение guest access token
+             ↓
+Получение динамического productId (Browse)
+             ↓
+Получение доступного SKU (Inventory)
+             ↓
+Добавление товара в корзину (Bag)
+             ↓
+Проверка состава корзины
+             ↓
+Изменение количества и проверка состояния
+             ↓
+Удаление товара и проверка результата
 ```
 
-Дополнительно проверяются negative scenarios и несколько разных товаров в одной корзине.
+Также выполняются негативные проверки API и сценарии с несколькими разными товарами.
 
-[⬆️ К содержанию](#contents)
+[К содержанию](#содержание)
 
----
-
-<a id="project-structure"></a>
-## 📁 Структура проекта
+<a id="structure"></a>
+## Структура проекта
 
 ```text
-American_Eagle_python_automation
-│
-├── .github
-│   └── workflows
+American_Eagle_python_automation/
+├── .github/
+│   └── workflows/
 │       └── tests.yml
-│
-├── docs
+├── docs/
 │   └── American_Eagle_Python_TestPlan_2026.pdf
-│
-├── api
-│   └── ...
-│
-├── ui
-│   ├── components
-│   │   ├── footer_component.py
-│   │   └── header_component.py
-│   │
-│   ├── pages
-│   │   ├── account_page.py
+├── api/
+│   ├── auth/
+│   ├── client/
+│   └── config/
+├── ui/
+│   ├── components/
+│   ├── pages/
 │   │   ├── base_page.py
-│   │   ├── home_page.py
-│   │   ├── jeans_page.py
 │   │   ├── mens_clothes_page.py
 │   │   ├── product_page.py
-│   │   ├── search_results_page.py
-│   │   └── shopping_cart_page.py
-│   │
-│   ├── steps
-│   │   ├── product_cart_steps.py
-│   │   ├── product_catalog_steps.py
-│   │   └── registration_steps.py
-│   │
+│   │   └── ...
+│   ├── steps/
 │   ├── config.py
 │   └── constants.py
-│
-├── tests
-│   ├── api
-│   │   ├── test_bag_api.py
-│   │   ├── test_browse_api.py
-│   │   ├── test_inventory_api.py
-│   │   └── test_token_api.py
-│   │
-│   ├── ui
-│   │   ├── account
-│   │   ├── home_page
-│   │   └── mens_clothes
-│   │
+├── tests/
+│   ├── api/
+│   ├── ui/
+│   │   ├── account/
+│   │   ├── home_page/
+│   │   └── mens_clothes/
 │   ├── conftest.py
 │   └── test_smoke.py
-│
-├── utils
+├── utils/
 ├── pytest.ini
 ├── requirements.txt
 └── README.md
 ```
 
-Такая структура разделяет:
+[К содержанию](#содержание)
 
-- API clients / helpers;
-- UI Pages;
-- UI Components;
-- reusable Steps;
-- fixtures;
-- tests;
-- configuration;
-- constants;
-- utilities;
-- CI configuration.
+<a id="status"></a>
+## Результаты и статус проекта
 
-[⬆️ К содержанию](#contents)
+В проекте продемонстрированы:
 
----
+- автоматизация **REST API** и **Web UI** на Python;
+- разделение на тесты, API-клиенты, фикстуры, Page Objects, компоненты и Steps;
+- позитивное, негативное и smoke-тестирование;
+- работа с динамическими товарами и точными расчётами стоимости;
+- обработка известных popup, Shadow DOM и изменяющегося интерфейса;
+- CI с отдельными API/UI jobs и публикацией Allure Report;
+- документирование ограничений стороннего сайта через `skip`, `xfail` и тест-план.
 
-<a id="cicd-result"></a>
-## 📈 CI/CD результат
+**Статус: завершённая демонстрационная версия для портфолио.** Последний подтверждённый полный CI приведён в начале README. Возможные будущие доработки зависят от актуальности сайта и целей проекта; обязательного постоянного сопровождения production-сайта не предполагается.
 
-В проекте реализовано:
-
-- раздельное выполнение **API + smoke** и UI тестов;
-- headless Chrome для UI в CI;
-- GitHub Secret для API credential;
-- сохранение Allure results даже при ошибках тестового job;
-- отдельные artifacts для API + smoke и UI;
-- объединение результатов;
-- отдельный job для формирования Allure Report;
-- публикация отчёта через `gh-pages`;
-- поддержка ручного запуска workflow;
-- автоматический запуск при `push` и `pull_request`.
-
-Отдельное внимание уделено стабильности тестов на реальном production-сайте:
-
-- explicit waits;
-- обработка marketing и regional popup overlays;
-- централизованное закрытие blocking overlays;
-- повторное получение элементов после DOM update;
-- обработка `StaleElementReferenceException` и `ElementClickInterceptedException`;
-- fallback-навигация при исчезновении временных UI-элементов;
-- sale / regular price logic;
-- динамический выбор доступного SKU и товара;
-- отказ от фиксированных `sleep` в основных сценариях;
-- ограниченная retry-логика только для нестабильных взаимодействий с динамическим DOM;
-- ответственность Page Objects очищена от дублирующей логики после финального рефакторинга.
-
-[⬆️ К содержанию](#contents)
-
----
-
-## 🧩 Дополнительно
-
-- ✅ Python 3.12
-- ✅ Pytest
-- ✅ Selenium WebDriver
-- ✅ Requests
-- ✅ Page Object Model
-- ✅ Components
-- ✅ Steps layer
-- ✅ REST API automation
-- ✅ UI automation
-- ✅ Positive / Negative testing
-- ✅ Smoke testing
-- ✅ Known defect via `xfail`
-- ✅ Allure reporting
-- ✅ GitHub Actions CI
-- ✅ GitHub Pages
-- ✅ GitHub Secrets
-- ✅ Test Plan
-- ✅ Headless Chrome
-- ✅ Работа с anti-bot ограничениями production-сайта
-- ✅ Самостоятельная реализация вне учебной программы
-
----
+[К содержанию](#содержание)
 
 <a id="author"></a>
-## 👤 Автор
+## Автор
 
-**Ilya Sidorychev**
+**Ilya Sidorychev** · [GitHub — ISmeneger](https://github.com/ISmeneger)
 
-GitHub: [ISmeneger](https://github.com/ISmeneger)
+Проект выполнен самостоятельно после обучения тестированию ПО в Университете ИТМО и расширяет портфолио QA Automation проектом на Python в дополнение к [Java-версии](https://github.com/ISmeneger/American_Eagle_java_automation).
 
-Проект разработан самостоятельно как развитие навыков **Python QA Automation** после обучения тестированию ПО в Университете ИТМО и как расширение профессионального AQA-портфолио вторым языком программирования.
-
-[⬆️ К содержанию](#contents)
+[К содержанию](#содержание)
